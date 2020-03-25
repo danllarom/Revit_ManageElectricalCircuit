@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29306.81
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Revit_ManageElectricalCircuit", "Revit_ManageElectricalCircuit.csproj", "{C6F2B6B8-FAB3-4A5F-AAF6-D1743A1ED01B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C6F2B6B8-FAB3-4A5F-AAF6-D1743A1ED01B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C6F2B6B8-FAB3-4A5F-AAF6-D1743A1ED01B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C6F2B6B8-FAB3-4A5F-AAF6-D1743A1ED01B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C6F2B6B8-FAB3-4A5F-AAF6-D1743A1ED01B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {234C6351-EF4A-4E60-A876-1326E23D2654}
+	EndGlobalSection
+EndGlobal

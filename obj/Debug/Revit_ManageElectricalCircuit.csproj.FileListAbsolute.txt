@@ -1,0 +1,6 @@
+C:\Users\Valhalla\source\repos\Revit_ManageElectricalCircuit\bin\Debug\Revit_ManageElectricalCircuit.dll
+C:\Users\Valhalla\source\repos\Revit_ManageElectricalCircuit\bin\Debug\Revit_ManageElectricalCircuit.pdb
+C:\Users\Valhalla\source\repos\Revit_ManageElectricalCircuit\obj\Debug\Revit_ManageElectricalCircuit.csproj.CoreCompileInputs.cache
+C:\Users\Valhalla\source\repos\Revit_ManageElectricalCircuit\obj\Debug\Revit_ManageElectricalCircuit.dll
+C:\Users\Valhalla\source\repos\Revit_ManageElectricalCircuit\obj\Debug\Revit_ManageElectricalCircuit.pdb
+C:\Users\Valhalla\source\repos\Revit_ManageElectricalCircuit\obj\Debug\Revit_ManageElectricalCircuit.csprojAssemblyReference.cache
