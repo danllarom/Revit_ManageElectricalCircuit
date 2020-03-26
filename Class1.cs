@@ -13,22 +13,7 @@ using System.Windows.Forms;
 using System.Windows.Media.Imaging; //https://archi-lab.net/create-your-own-tab-and-buttons-in-revit/
 using System.Diagnostics;
 
-//MATRIZ DE INCIDENCIA:
-//Cada columna representa una edges del grafo y cada fila un nodo
-//los elementos que la componen son ceros y unos: uno si la edges y el nodo correspondientes tienen relacion directa y cero si no.
-//MATRIZ DE ADYACENCIA:
 
-//Es una matriz cuadrada donde tanto las filas con mo las columnas representan todos los Aristas del grafo.
-//Los elementos que la componen son ceros y unos: uno si el nodo de la fila esta conectado por medio de una edges al modo de la columna y cero si no.
-//si la cominicacion es bidireccional la matriz es simetrica.
-
-//SECUENCIA DE GRADOS:
-//es un vector en el que cada elemento representa el numero de aristas que llegan o salen de un vertice.
-
-//Algoritmo de Floyd-Warshall
-//https://es.wikipedia.org/wiki/Algoritmo_de_Floyd-Warshall
-//https://www.programmingalgorithms.com/algorithm/floyd%E2%80%93warshall-algorithm/
-//https://www.csharpstar.com/floyd-warshall-algorithm-csharp/
 
 
 //OTHER
@@ -36,38 +21,11 @@ using System.Diagnostics;
 
 namespace Revit_ManageElectricalCircuit
 {
-    public struct nodo
-    {
-        public nodo(int name, XYZ location, Connector conector)
-        {
-            Name = name;
-            Location = location;
-            Conector = conector;
-        }
-
-        public int Name { get; set; }
-        public XYZ Location { get; set; }
-        public Connector Conector { get; set; }
-    }
-    public struct edges
-    {
-        public edges(int nodeA, int nodeB, double lenth)
-        {
-            NodeA = nodeA;
-            NodeB = nodeB;
-            Lenth = lenth;
-        }
-
-        public int NodeA { get; set; }
-        public int NodeB { get; set; }
-        public double Lenth { get; set; }
-    }
-
     [Transaction(TransactionMode.Manual)]
     [Regeneration(RegenerationOption.Manual)]
     public class Class1 : IExternalCommand
     {
-        
+
         public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
         {
             //Get application and documnet objects
@@ -79,7 +37,7 @@ namespace Revit_ManageElectricalCircuit
                 //get all cable tray element in de model
                 FilteredElementCollector collectorCableTrayFitting = new FilteredElementCollector(doc);
                 collectorCableTrayFitting = GetConnectorElements(doc, false);
-                
+
                 FloydWarshall floydWarshall = new FloydWarshall();
                 floydWarshall.PlayFloydWarshall(GetLines(collectorCableTrayFitting));
 
@@ -92,57 +50,27 @@ namespace Revit_ManageElectricalCircuit
                 nodo nodeA = new nodo();
                 nodo nodeB = new nodo();
 
-                foreach (ElectricalSystem circuito in collector1)
+                foreach (ElectricalSystem elem in collector1)
                 {
-                    LocationPoint locationPanel = circuito.BaseEquipment.Location as LocationPoint;
+                    LocationPoint locationPanel = elem.BaseEquipment.Location as LocationPoint;
                     XYZ XYZPanel = locationPanel.Point;
 
-                    int j = 0;
-                    foreach (nodo node in floydWarshall.nodos)
-                    {
-                        if (j == 0)
-                        {
-                            nodeA.Location = node.Location;
-                            nodeA.Name = node.Name;
-                            j++;
-                        }
-                        else if (Math.Abs(XYZPanel.Subtract(node.Location).GetLength()) < Math.Abs(XYZPanel.Subtract(nodeA.Location).GetLength()))
-                        {
-                            nodeA.Location = node.Location;
-                            nodeA.Name = node.Name;
-                            j++;
-                        }
-                    }
-                    j = 0;
+                    nodeA=closeNode(XYZPanel, floydWarshall.nodos);
+
                     List<XYZ> CircuitsElement = new List<XYZ>();
-                    foreach (Element elem in circuito.Elements)
+                    foreach (FamilyInstance elem1 in elem.Elements)
                     {
-                        FamilyInstance elemCircuit = elem as FamilyInstance;
-                        LocationPoint locationelem = elemCircuit.Location as LocationPoint;
+                        LocationPoint locationelem = elem1.Location as LocationPoint;
                         XYZ XYZelem = locationelem.Point;
                         CircuitsElement.Add(XYZelem);
-
-                        foreach (nodo node in floydWarshall.nodos)
-                        {
-                            if (j == 0)
-                            {
-                                nodeB.Location = node.Location;
-                                nodeB.Name = node.Name;
-                                j++;
-                            }
-                            else if (Math.Abs(XYZelem.Subtract(node.Location).GetLength()) < Math.Abs(XYZelem.Subtract(nodeB.Location).GetLength()))
-                            {
-                                nodeB.Location = node.Location;
-                                nodeB.Name = node.Name;
-                                j++;
-                            }
-                        }
+                        nodeB = closeNode(XYZelem, floydWarshall.nodos);
                     }
+
                     floydWarshall.GetPath(nodeA.Name, nodeB.Name);
 
                     Transaction trans2 = new Transaction(doc);
                     trans2.Start("Lab");
-                    circuito.SetCircuitPath(floydWarshall.organizePath(nodeA.Name, nodeB.Name, XYZPanel, CircuitsElement));
+                    elem.SetCircuitPath(floydWarshall.organizePath(nodeA.Name, nodeB.Name, XYZPanel, CircuitsElement));
                     trans2.Commit();
                 }
             }
@@ -179,8 +107,8 @@ namespace Revit_ManageElectricalCircuit
             BuiltInCategory[] bics = new BuiltInCategory[] {
                 //BuiltInCategory.OST_CableTray,
                 BuiltInCategory.OST_CableTrayFitting,
-                //BuiltInCategory.OST_Conduit,
-                //BuiltInCategory.OST_ConduitFitting,
+                BuiltInCategory.OST_Conduit,
+                BuiltInCategory.OST_ConduitFitting,
                 //BuiltInCategory.OST_DuctCurves,
                 //BuiltInCategory.OST_DuctFitting,
                 //BuiltInCategory.OST_DuctTerminal,
@@ -217,7 +145,7 @@ namespace Revit_ManageElectricalCircuit
               = new List<ElementFilter>(6);
 
             b.Add(new ElementClassFilter(typeof(CableTray)));
-            //b.Add(new ElementClassFilter(typeof(Conduit)));
+            b.Add(new ElementClassFilter(typeof(Conduit)));
             //b.Add(new ElementClassFilter(typeof(Duct)));
             //b.Add(new ElementClassFilter(typeof(Pipe)));
 
@@ -259,7 +187,7 @@ namespace Revit_ManageElectricalCircuit
             }
             else
             {
-                Debug.Assert(e.GetType().IsSubclassOf(typeof(MEPCurve)),"expected all candidate connector provider " 
+                Debug.Assert(e.GetType().IsSubclassOf(typeof(MEPCurve)), "expected all candidate connector provider "
                     + "elements to be either family instances or "
                     + "derived from MEPCurve");
 
@@ -288,14 +216,14 @@ namespace Revit_ManageElectricalCircuit
                     XYZ Pcentro = null;
                     double[] L = new double[3];
 
-                    foreach (Connector conector in conectores)
+                    foreach (Connector elem1 in conectores)
                     {
-                        P[i] = conector.Origin;
+                        P[i] = elem1.Origin;
                         i++;
                         var testWasTrue = false;
                         foreach (nodo connector1 in connectorsNodo)
                         {
-                            if (conector.IsConnectedTo(connector1.Conector))
+                            if (elem1.IsConnectedTo(connector1.Conector))
                             {
                                 testWasTrue = true;
                                 break;
@@ -303,7 +231,7 @@ namespace Revit_ManageElectricalCircuit
                         }
                         if (testWasTrue == false)
                         {
-                            connectorsNodo.Add(new nodo(0, null, conector));
+                            connectorsNodo.Add(new nodo(0, null, elem1));
                         }
                     }
                     L[0] = P[0].Subtract(P[1]).GetLength();
@@ -327,10 +255,10 @@ namespace Revit_ManageElectricalCircuit
                     {
                         Pcentro = P[2].Subtract(P[0]).Divide(2).Add(P[0]);
                     }
-                    foreach (Connector conector in conectores)
+                    foreach (Connector elem1 in conectores)
                     {
                         XYZ[] P1 = new XYZ[2];
-                        P1[0] = conector.Origin;
+                        P1[0] = elem1.Origin;
                         P1[1] = Pcentro;
                         Aristas.Add(P1);
                         i++;
@@ -340,14 +268,14 @@ namespace Revit_ManageElectricalCircuit
                 if (conectores.Size == 4)
                 {
                     XYZ[] P = new XYZ[4];
-                    foreach (Connector conector in conectores)
+                    foreach (Connector elem1 in conectores)
                     {
-                        P[i] = conector.Origin;
+                        P[i] = elem1.Origin;
                         i++;
                         var testWasTrue = false;
                         foreach (nodo connector1 in connectorsNodo)
                         {
-                            if (conector.IsConnectedTo(connector1.Conector))
+                            if (elem1.IsConnectedTo(connector1.Conector))
                             {
                                 testWasTrue = true;
                                 break;
@@ -355,15 +283,15 @@ namespace Revit_ManageElectricalCircuit
                         }
                         if (testWasTrue == false)
                         {
-                            connectorsNodo.Add(new nodo(0, null, conector));
+                            connectorsNodo.Add(new nodo(0, null, elem1));
                         }
                     }
                     XYZ Pcentro = P[0].Add(P[1]).Add(P[2]).Add(P[3]).Divide(4);
                     i = 0;
-                    foreach (Connector conector in conectores)
+                    foreach (Connector elem1 in conectores)
                     {
                         XYZ[] P1 = new XYZ[2];
-                        P1[0] = conector.Origin;
+                        P1[0] = elem1.Origin;
                         P1[1] = Pcentro;
                         Aristas.Add(P1);
                         i++;
@@ -372,15 +300,15 @@ namespace Revit_ManageElectricalCircuit
                 if (conectores.Size == 2)
                 {
                     XYZ[] P = new XYZ[2];
-                    foreach (Connector conector in conectores)
+                    foreach (Connector elem1 in conectores)
                     {
-                        P[i] = conector.Origin;
+                        P[i] = elem1.Origin;
                         i++;
 
                         var testWasTrue = false;
-                        foreach (nodo connector1 in connectorsNodo)
+                        foreach (nodo elem2 in connectorsNodo)
                         {
-                            if (conector.IsConnectedTo(connector1.Conector))
+                            if (elem1.IsConnectedTo(elem2.Conector))
                             {
                                 testWasTrue = true;
                                 break;
@@ -388,15 +316,38 @@ namespace Revit_ManageElectricalCircuit
                         }
                         if (testWasTrue == false)
                         {
-                            connectorsNodo.Add(new nodo(0, null, conector));
+                            connectorsNodo.Add(new nodo(0, null, elem1));
                         }
                     }
                     Aristas.Add(P);
                 }
             }
-
-            
             return Aristas;
+        }
+        static nodo closeNode(XYZ node, List<nodo> nodos)
+        {
+            nodo closeNodo = new nodo();
+            int j = 0;
+            foreach (nodo elem in nodos)
+            {
+                if (j == 0)
+                {
+                    closeNodo = elem;
+                    j++;
+                }
+                else if (Math.Abs(node.Subtract(elem.Location).GetLength()) < Math.Abs(node.Subtract(closeNodo.Location).GetLength()))
+                {
+                    closeNodo = elem;
+                    j++;
+                }
+            }
+            return closeNodo;
+        }
+        static nodo[] moreCloseNodes(List<nodo> nodesA, List<nodo> nodesB)
+        {
+
+            nodo[] closeNodes = new nodo[2];
+            return closeNodes;
         }
     }
 }

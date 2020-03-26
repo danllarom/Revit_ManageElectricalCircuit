@@ -12,6 +12,23 @@ using Autodesk.Revit.DB.Electrical;
 using System.Diagnostics;
 using System.Windows.Forms;
 
+//MATRIZ DE INCIDENCIA:
+//Cada columna representa una edges del grafo y cada fila un nodo
+//los elementos que la componen son ceros y unos: uno si la edges y el nodo correspondientes tienen relacion directa y cero si no.
+//MATRIZ DE ADYACENCIA:
+
+//Es una matriz cuadrada donde tanto las filas con mo las columnas representan todos los Aristas del grafo.
+//Los elementos que la componen son ceros y unos: uno si el nodo de la fila esta conectado por medio de una edges al modo de la columna y cero si no.
+//si la cominicacion es bidireccional la matriz es simetrica.
+
+//SECUENCIA DE GRADOS:
+//es un vector en el que cada elemento representa el numero de aristas que llegan o salen de un vertice.
+
+//Algoritmo de Floyd-Warshall
+//https://es.wikipedia.org/wiki/Algoritmo_de_Floyd-Warshall
+//https://www.programmingalgorithms.com/algorithm/floyd%E2%80%93warshall-algorithm/
+//https://www.csharpstar.com/floyd-warshall-algorithm-csharp/
+
 namespace Revit_ManageElectricalCircuit
 {
     class FloydWarshall
@@ -22,7 +39,7 @@ namespace Revit_ManageElectricalCircuit
         public List<nodo> nodos = new List<nodo> { };
         public List<XYZ[]> Aristas = null;
         public List<edges> Edges = new List<edges> { };
-        List<int> path = new List<int>();
+        public List<int> path = new List<int>();
 
         public FloydWarshall()
         {
@@ -30,19 +47,19 @@ namespace Revit_ManageElectricalCircuit
         public List<nodo> GetNodos()
         {
             int i = 0;
-            foreach (XYZ[] arista in Aristas)
+            foreach (XYZ[] elem in Aristas)
             {
                 var testWasTrue = false;
 
                 if (nodos.Count() == 0)
                 {
-                    nodo punto = new nodo(i, arista[0], null);
+                    nodo punto = new nodo(i, elem[0], null);
                     nodos.Add(punto);
                     i++;
                 }
-                foreach (nodo nodo1 in nodos)
+                foreach (nodo elem1 in nodos)
                 {
-                    if (Math.Abs(arista[0].DistanceTo(nodo1.Location))<=1e-9)
+                    if (Math.Abs(elem[0].DistanceTo(elem1.Location))<=1e-9)
                     {
                         testWasTrue = true;
                         break;
@@ -51,14 +68,14 @@ namespace Revit_ManageElectricalCircuit
 
                 if (testWasTrue==false)
                 {
-                    nodo punto = new nodo(i, arista[0],null);
+                    nodo punto = new nodo(i, elem[0],null);
                     nodos.Add(punto);
                     i++;
                 }
                 testWasTrue = false;
-                foreach (nodo nodo1 in nodos)
+                foreach (nodo elem1 in nodos)
                 {
-                    if (Math.Abs(arista[1].DistanceTo(nodo1.Location)) <=1e-9)
+                    if (Math.Abs(elem[1].DistanceTo(elem1.Location)) <=1e-9)
                     {
                         testWasTrue = true;
                         break;
@@ -66,7 +83,7 @@ namespace Revit_ManageElectricalCircuit
                 }
                 if (testWasTrue==false)
                 {
-                    nodo punto = new nodo(i, arista[1],null);
+                    nodo punto = new nodo(i, elem[1],null);
                     nodos.Add(punto);
                     i++;
                 }
@@ -76,17 +93,17 @@ namespace Revit_ManageElectricalCircuit
         public List<edges> GetEdges()
         {
             Edges = new List<edges> { };
-            foreach (XYZ[] arista in Aristas)
+            foreach (XYZ[] elem in Aristas)
             {
-                edges line1 = new edges{Lenth = Math.Abs(arista[0].Subtract(arista[1]).GetLength())};
+                edges line1 = new edges{Lenth = Math.Abs(elem[0].Subtract(elem[1]).GetLength())};
 
                 foreach (nodo nodo1 in nodos)
                 {
-                    if (Math.Abs(arista[0].Subtract(nodo1.Location).GetLength()) <= 1e-9) 
+                    if (Math.Abs(elem[0].Subtract(nodo1.Location).GetLength()) <= 1e-9) 
                     {
                         line1.NodeA = nodo1.Name;
                     }
-                    if (Math.Abs(arista[1].Subtract(nodo1.Location).GetLength()) <= 1e-9)
+                    if (Math.Abs(elem[1].Subtract(nodo1.Location).GetLength()) <= 1e-9)
                     {
                         line1.NodeB = nodo1.Name;
                     }
@@ -114,12 +131,12 @@ namespace Revit_ManageElectricalCircuit
                     }
                 }
             }
-            foreach (edges arista1 in Edges)
+            foreach (edges elem in Edges)
             {
-                AdjacencyMatrix[arista1.NodeA, arista1.NodeB] = arista1.Lenth;
-                AdjacencyMatrix[arista1.NodeB, arista1.NodeA] = arista1.Lenth;
-                AdjacencyMatrix0[arista1.NodeA, arista1.NodeB] = 1;
-                AdjacencyMatrix0[arista1.NodeB, arista1.NodeA] = 1;
+                AdjacencyMatrix[elem.NodeA, elem.NodeB] = elem.Lenth;
+                AdjacencyMatrix[elem.NodeB, elem.NodeA] = elem.Lenth;
+                AdjacencyMatrix0[elem.NodeA, elem.NodeB] = 1;
+                AdjacencyMatrix0[elem.NodeB, elem.NodeA] = 1;
             }
             return AdjacencyMatrix;
         }
@@ -191,17 +208,40 @@ namespace Revit_ManageElectricalCircuit
             path.Add(nodeEnd);
 
             readPathMatrix(nodeInit, nodeEnd);
-            
+
+            List<int> path1 = new List<int>(path);
+            path.Clear();
+            path.Add(nodeInit);
+            path1.Remove(nodeInit);
+
+            while (true)
+            {
+                //TODO: evitar el bucle infinito si i no aumenta
+                foreach (int elem in path1)
+                {
+                    if (AdjacencyMatrix0[nodeInit, elem] == 1)
+                    {
+                        path.Add(elem);
+                        path1.Remove(elem);
+                        nodeInit = elem;
+                        break;
+                    }
+                }
+                if (nodeInit == nodeEnd)
+                {
+                    break;
+                }
+            }
             return path;
         }
         public XYZ GetXYZNode(int node)
         {
             XYZ point = null;
-            foreach (nodo nodei in nodos)
+            foreach (nodo elem in nodos)
             {
-                if (node == nodei.Name)
+                if (node == elem.Name)
                 {
-                    point = nodei.Location;
+                    point = elem.Location;
                     break;
                 }
             }
@@ -209,6 +249,7 @@ namespace Revit_ManageElectricalCircuit
         }
         public void readPathMatrix(int nodeInit, int nodeEnd)
         {
+            //TODO: evitar el bucles infinitos si puediera ocurrir
             if (((PathMatrix[nodeInit, nodeEnd] != nodeInit) && (PathMatrix[nodeInit, nodeEnd] != nodeEnd))|| ((PathMatrix[nodeEnd, nodeInit] != nodeInit) && (PathMatrix[nodeEnd, nodeInit] != nodeEnd)))
             {
                 int node = nodeEnd;
@@ -241,41 +282,19 @@ namespace Revit_ManageElectricalCircuit
             if (nodePanel != null)
             {
                 path1.Add(nodePanel);
-                if (nodePanel.Z != GetXYZNode(nodeInit).Z)
+            }
+            foreach (int elem in path)
+            {
+                if (Math.Abs(path1.Last().Z - GetXYZNode(elem).Z) > 1e-9)
                 {
-                    XYZ a = new XYZ(nodePanel.X, nodePanel.Y, GetXYZNode(nodeInit).Z);
+                    XYZ a = new XYZ(path1.Last().X, path1.Last().Y, GetXYZNode(elem).Z);
                     path1.Add(a);
                 }
-            }
-            path1.Add(GetXYZNode(nodeInit));
-            path.Remove(nodeInit);
-
-            while (true)
-            {
-                //TODO: evitar el bucle infinito si i no aumenta
-                foreach (int node in path)
-                {
-                    if (AdjacencyMatrix0[nodeInit, node] == 1)
-                    {
-                        if (Math.Abs(path1.Last().Z-GetXYZNode(node).Z)>1e-9)
-                        {
-                            XYZ a = new XYZ(path1.Last().X, path1.Last().Y, GetXYZNode(node).Z);
-                            path1.Add(a);
-                        }
-                        path1.Add(GetXYZNode(node));
-                        path.Remove(node);
-                        nodeInit = node;
-                        break;
-                    }
-                }
-                if (nodeInit == nodeEnd)
-                {
-                    break;
-                }
+                path1.Add(GetXYZNode(elem));
             }
             foreach (XYZ elem in element)
             {
-                if (path1.Last().Z != elem.Z)
+                if (Math.Abs(path1.Last().Z - elem.Z) > 1e-9)
                 {
                     XYZ a = new XYZ(path1.Last().X, path1.Last().Y, elem.Z);
                     path1.Add(a);
