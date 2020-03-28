@@ -52,7 +52,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Class1.cs" />
-    <Compile Include="nodes.cs" />
+    <Compile Include="ConnectorsSistem.cs" />
+    <Compile Include="Edge.cs" />
+    <Compile Include="Node.cs" />
     <Compile Include="FloydWarshall.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

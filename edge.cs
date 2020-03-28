@@ -14,19 +14,6 @@ using System.Windows.Forms;
 
 namespace Revit_ManageElectricalCircuit
 {
-    public struct nodo
-    {
-        public nodo(int name, XYZ location, Connector conector)
-        {
-            Name = name;
-            Location = location;
-            Conector = conector;
-        }
-
-        public int Name { get; set; }
-        public XYZ Location { get; set; }
-        public Connector Conector { get; set; }
-    }
     public struct edges
     {
         public edges(int nodeA, int nodeB, double lenth)
@@ -35,14 +22,21 @@ namespace Revit_ManageElectricalCircuit
             NodeB = nodeB;
             Lenth = lenth;
         }
-
         public int NodeA { get; set; }
         public int NodeB { get; set; }
         public double Lenth { get; set; }
     }
-
-    class nodes
+    class Edge
     {
-       
+        public Node nodeA = null;
+        public Node nodeB = null;
+        public double Lenth { get;}
+        public Edge() {}
+        public Edge(ref Node nodea, ref Node nodeb)
+        {
+            nodeA = nodea;
+            nodeB = nodeb;
+            Lenth = Math.Abs(nodeA.Location.Subtract(nodeA.Location).GetLength());
+        }
     }
 }

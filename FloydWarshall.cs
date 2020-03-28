@@ -140,7 +140,9 @@ namespace Revit_ManageElectricalCircuit
             }
             return AdjacencyMatrix;
         }
+
         public const double PositiveInfinity = 1.5e300;
+
         public int[,] PlayFloydWarshall(List<XYZ[]> aristas)
         {
             Aristas = new List<XYZ[]> (aristas);
