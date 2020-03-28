@@ -14,23 +14,13 @@ using System.Windows.Forms;
 
 namespace Revit_ManageElectricalCircuit
 {
-    public struct nodo
-    {
-        public nodo(int name, XYZ location, Connector conector)
-        {
-            Name = name;
-            Location = location;
-            Conector = conector;
-        }
-
-        public int Name { get; set; }
-        public XYZ Location { get; set; }
-        public Connector Conector { get; set; }
-    }
     class Node
     {
         public int Name;
         public XYZ Location = null;
+        public Node()
+        {
+        }
         public Node(int name, XYZ location, Connector conector)
         {
             Name = name;

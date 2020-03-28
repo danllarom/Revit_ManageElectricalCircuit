@@ -25,7 +25,6 @@ namespace Revit_ManageElectricalCircuit
     [Regeneration(RegenerationOption.Manual)]
     public class Class1 : IExternalCommand
     {
-
         public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
         {
             //Get application and documnet objects
@@ -35,27 +34,33 @@ namespace Revit_ManageElectricalCircuit
             try
             {
                 //get all cable tray element in de model
-                FilteredElementCollector collectorCableTrayFitting = new FilteredElementCollector(doc);
-                collectorCableTrayFitting = GetConnectorElements(doc, false);
+                FilteredElementCollector Collector = new FilteredElementCollector(doc);
+                Collector = GetConnectorElements(doc, false);
+
+                ConnectorsSistem connectorsSistem = new ConnectorsSistem();
+                connectorsSistem.AddConnectorSetFromFilteredElementCollector(Collector);
+                //connectorsSistem.RenameNode();
 
                 FloydWarshall floydWarshall = new FloydWarshall();
-                floydWarshall.PlayFloydWarshall(GetLines(collectorCableTrayFitting));
+                floydWarshall.PlayFloydWarshall(ref connectorsSistem);
 
-                MessageBox.Show(floydWarshall.nodos.Count().ToString());
+                //MessageBox.Show(floydWarshall.nodos.Count().ToString());
 
                 //Pick Circuit
                 FilteredElementCollector collector1 = new FilteredElementCollector(doc);
                 collector1.OfCategory(BuiltInCategory.OST_ElectricalCircuit);
 
-                nodo nodeA = new nodo();
-                nodo nodeB = new nodo();
+                
 
                 foreach (ElectricalSystem elem in collector1)
                 {
+                    Node nodeA = new Node();
+                    Node nodeB = new Node();
+
                     LocationPoint locationPanel = elem.BaseEquipment.Location as LocationPoint;
                     XYZ XYZPanel = locationPanel.Point;
 
-                    nodeA=closeNode(XYZPanel, floydWarshall.nodos);
+                    nodeA = closeNode(XYZPanel, floydWarshall.nodos);
 
                     List<XYZ> CircuitsElement = new List<XYZ>();
                     foreach (FamilyInstance elem1 in elem.Elements)
@@ -65,7 +70,6 @@ namespace Revit_ManageElectricalCircuit
                         CircuitsElement.Add(XYZelem);
                         nodeB = closeNode(XYZelem, floydWarshall.nodos);
                     }
-
                     floydWarshall.GetPath(nodeA.Name, nodeB.Name);
 
                     Transaction trans2 = new Transaction(doc);
@@ -166,169 +170,11 @@ namespace Revit_ManageElectricalCircuit
 
             return collector;
         }
-        static ConnectorSet GetConnectors(Element e)
+        static Node closeNode(XYZ node, List<Node> nodos)
         {
-            ConnectorSet connectors = null;
-
-            if (e is FamilyInstance)
-            {
-                MEPModel m = ((FamilyInstance)e).MEPModel;
-
-                if (null != m
-                  && null != m.ConnectorManager)
-                {
-                    connectors = m.ConnectorManager.Connectors;
-                }
-            }
-            else if (e is Wire)
-            {
-                connectors = ((Wire)e)
-                  .ConnectorManager.Connectors;
-            }
-            else
-            {
-                Debug.Assert(e.GetType().IsSubclassOf(typeof(MEPCurve)), "expected all candidate connector provider "
-                    + "elements to be either family instances or "
-                    + "derived from MEPCurve");
-
-                if (e is MEPCurve)
-                {
-                    connectors = ((MEPCurve)e)
-                      .ConnectorManager.Connectors;
-                }
-            }
-            return connectors;
-        }
-        static List<XYZ[]> GetLines(FilteredElementCollector collectorCableTrayFitting)
-        {
-            List<XYZ[]> Aristas = new List<XYZ[]>();
-            List<nodo> connectorsNodo = new List<nodo>();
-            int i = 0;
-            foreach (Element elem in collectorCableTrayFitting)
-            {
-                ConnectorSet conectores = GetConnectors(elem);
-
-                i = 0;
-
-                if (conectores.Size == 3)
-                {
-                    XYZ[] P = new XYZ[3];
-                    XYZ Pcentro = null;
-                    double[] L = new double[3];
-
-                    foreach (Connector elem1 in conectores)
-                    {
-                        P[i] = elem1.Origin;
-                        i++;
-                        var testWasTrue = false;
-                        foreach (nodo connector1 in connectorsNodo)
-                        {
-                            if (elem1.IsConnectedTo(connector1.Conector))
-                            {
-                                testWasTrue = true;
-                                break;
-                            }
-                        }
-                        if (testWasTrue == false)
-                        {
-                            connectorsNodo.Add(new nodo(0, null, elem1));
-                        }
-                    }
-                    L[0] = P[0].Subtract(P[1]).GetLength();
-                    L[0] = Math.Abs(L[0]);
-                    L[1] = P[1].Subtract(P[2]).GetLength();
-                    L[1] = Math.Abs(L[1]);
-                    L[2] = P[2].Subtract(P[0]).GetLength();
-                    L[2] = Math.Abs(L[2]);
-
-                    double Lmax = Math.Max(L[0], Math.Max(L[1], L[2]));
-
-                    if (Lmax == L[0])
-                    {
-                        Pcentro = P[0].Subtract(P[1]).Divide(2).Add(P[1]);
-                    }
-                    if (Lmax == L[1])
-                    {
-                        Pcentro = P[1].Subtract(P[2]).Divide(2).Add(P[2]);
-                    }
-                    if (Lmax == L[2])
-                    {
-                        Pcentro = P[2].Subtract(P[0]).Divide(2).Add(P[0]);
-                    }
-                    foreach (Connector elem1 in conectores)
-                    {
-                        XYZ[] P1 = new XYZ[2];
-                        P1[0] = elem1.Origin;
-                        P1[1] = Pcentro;
-                        Aristas.Add(P1);
-                        i++;
-                    }
-
-                }
-                if (conectores.Size == 4)
-                {
-                    XYZ[] P = new XYZ[4];
-                    foreach (Connector elem1 in conectores)
-                    {
-                        P[i] = elem1.Origin;
-                        i++;
-                        var testWasTrue = false;
-                        foreach (nodo connector1 in connectorsNodo)
-                        {
-                            if (elem1.IsConnectedTo(connector1.Conector))
-                            {
-                                testWasTrue = true;
-                                break;
-                            }
-                        }
-                        if (testWasTrue == false)
-                        {
-                            connectorsNodo.Add(new nodo(0, null, elem1));
-                        }
-                    }
-                    XYZ Pcentro = P[0].Add(P[1]).Add(P[2]).Add(P[3]).Divide(4);
-                    i = 0;
-                    foreach (Connector elem1 in conectores)
-                    {
-                        XYZ[] P1 = new XYZ[2];
-                        P1[0] = elem1.Origin;
-                        P1[1] = Pcentro;
-                        Aristas.Add(P1);
-                        i++;
-                    }
-                }
-                if (conectores.Size == 2)
-                {
-                    XYZ[] P = new XYZ[2];
-                    foreach (Connector elem1 in conectores)
-                    {
-                        P[i] = elem1.Origin;
-                        i++;
-
-                        var testWasTrue = false;
-                        foreach (nodo elem2 in connectorsNodo)
-                        {
-                            if (elem1.IsConnectedTo(elem2.Conector))
-                            {
-                                testWasTrue = true;
-                                break;
-                            }
-                        }
-                        if (testWasTrue == false)
-                        {
-                            connectorsNodo.Add(new nodo(0, null, elem1));
-                        }
-                    }
-                    Aristas.Add(P);
-                }
-            }
-            return Aristas;
-        }
-        static nodo closeNode(XYZ node, List<nodo> nodos)
-        {
-            nodo closeNodo = new nodo();
+            Node closeNodo = new Node();
             int j = 0;
-            foreach (nodo elem in nodos)
+            foreach (Node elem in nodos)
             {
                 if (j == 0)
                 {
@@ -343,10 +189,10 @@ namespace Revit_ManageElectricalCircuit
             }
             return closeNodo;
         }
-        static nodo[] moreCloseNodes(List<nodo> nodesA, List<nodo> nodesB)
+        static Node[] moreCloseNodes(List<Node> nodesA, List<Node> nodesB)
         {
 
-            nodo[] closeNodes = new nodo[2];
+            Node[] closeNodes = new Node[2];
             return closeNodes;
         }
     }

@@ -19,6 +19,7 @@ namespace Revit_ManageElectricalCircuit
     {
         public List<Node> Nodes = new List<Node> { };
         public List<Edge> Edges = new List<Edge> { };
+        public int NodesCount;
 
         public ConnectorSet Connectors;
         public ConnectorsSistem()
@@ -42,8 +43,9 @@ namespace Revit_ManageElectricalCircuit
             }
             if (testWasTrue == false)
             {
-                node = new Node(0, P, null);
+                node = new Node(NodesCount, P, null);
                 Nodes.Add(node);
+                NodesCount++;
             }
         }
         public void AddEdge(XYZ P1, XYZ P2)
@@ -101,6 +103,23 @@ namespace Revit_ManageElectricalCircuit
             ConnectorSet connectors = GetConnectors(elem);
             AddConnectorSet(connectors);
         }
+        public void AddConnectorSetFromFilteredElementCollector(FilteredElementCollector Collector)
+        {
+            foreach (Element elem in Collector)
+            {
+                AddConnectorSetFromElement(elem);
+            }
+        }
+        public void RenameNode()
+        {
+            int i = 0;
+            foreach (Node elem in Nodes)
+            {
+                elem.Name = i;
+                i++;
+            }
+            NodesCount = Nodes.Count();
+        }
         static ConnectorSet GetConnectors(Element e)
         {
             ConnectorSet connectors = null;
@@ -130,14 +149,6 @@ namespace Revit_ManageElectricalCircuit
                 }
             }
             return connectors;
-        }
-        public void RenameNode()
-        {
-            int i = 0;
-            foreach (Node elem in Nodes)
-            {
-                elem.Name = i;
-            }
-        }
+        }   
     }
 }

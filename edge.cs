@@ -14,18 +14,6 @@ using System.Windows.Forms;
 
 namespace Revit_ManageElectricalCircuit
 {
-    public struct edges
-    {
-        public edges(int nodeA, int nodeB, double lenth)
-        {
-            NodeA = nodeA;
-            NodeB = nodeB;
-            Lenth = lenth;
-        }
-        public int NodeA { get; set; }
-        public int NodeB { get; set; }
-        public double Lenth { get; set; }
-    }
     class Edge
     {
         public Node nodeA = null;

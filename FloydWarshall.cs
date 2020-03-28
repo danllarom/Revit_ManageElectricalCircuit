@@ -36,81 +36,12 @@ namespace Revit_ManageElectricalCircuit
         public double[,] AdjacencyMatrix=null;
         public double[,] AdjacencyMatrix0 = null;
         public int[,] PathMatrix = null;
-        public List<nodo> nodos = new List<nodo> { };
-        public List<XYZ[]> Aristas = null;
-        public List<edges> Edges = new List<edges> { };
+        public List<Node> nodos = new List<Node> { };
+        public List<Edge> Edges = new List<Edge> { };
         public List<int> path = new List<int>();
 
         public FloydWarshall()
         {
-        }
-        public List<nodo> GetNodos()
-        {
-            int i = 0;
-            foreach (XYZ[] elem in Aristas)
-            {
-                var testWasTrue = false;
-
-                if (nodos.Count() == 0)
-                {
-                    nodo punto = new nodo(i, elem[0], null);
-                    nodos.Add(punto);
-                    i++;
-                }
-                foreach (nodo elem1 in nodos)
-                {
-                    if (Math.Abs(elem[0].DistanceTo(elem1.Location))<=1e-9)
-                    {
-                        testWasTrue = true;
-                        break;
-                    }
-                }
-
-                if (testWasTrue==false)
-                {
-                    nodo punto = new nodo(i, elem[0],null);
-                    nodos.Add(punto);
-                    i++;
-                }
-                testWasTrue = false;
-                foreach (nodo elem1 in nodos)
-                {
-                    if (Math.Abs(elem[1].DistanceTo(elem1.Location)) <=1e-9)
-                    {
-                        testWasTrue = true;
-                        break;
-                    }
-                }
-                if (testWasTrue==false)
-                {
-                    nodo punto = new nodo(i, elem[1],null);
-                    nodos.Add(punto);
-                    i++;
-                }
-            }
-            return nodos;
-        }
-        public List<edges> GetEdges()
-        {
-            Edges = new List<edges> { };
-            foreach (XYZ[] elem in Aristas)
-            {
-                edges line1 = new edges{Lenth = Math.Abs(elem[0].Subtract(elem[1]).GetLength())};
-
-                foreach (nodo nodo1 in nodos)
-                {
-                    if (Math.Abs(elem[0].Subtract(nodo1.Location).GetLength()) <= 1e-9) 
-                    {
-                        line1.NodeA = nodo1.Name;
-                    }
-                    if (Math.Abs(elem[1].Subtract(nodo1.Location).GetLength()) <= 1e-9)
-                    {
-                        line1.NodeB = nodo1.Name;
-                    }
-                }
-                Edges.Add(line1);
-            }
-            return Edges;
         }
         public double[,] GetAdjacencyMatrix()
         {
@@ -131,25 +62,21 @@ namespace Revit_ManageElectricalCircuit
                     }
                 }
             }
-            foreach (edges elem in Edges)
+            foreach (Edge elem in Edges)
             {
-                AdjacencyMatrix[elem.NodeA, elem.NodeB] = elem.Lenth;
-                AdjacencyMatrix[elem.NodeB, elem.NodeA] = elem.Lenth;
-                AdjacencyMatrix0[elem.NodeA, elem.NodeB] = 1;
-                AdjacencyMatrix0[elem.NodeB, elem.NodeA] = 1;
+                AdjacencyMatrix[elem.nodeA.Name, elem.nodeB.Name] = elem.Lenth;
+                AdjacencyMatrix[elem.nodeB.Name, elem.nodeA.Name] = elem.Lenth;
+                AdjacencyMatrix0[elem.nodeA.Name, elem.nodeB.Name] = 1;
+                AdjacencyMatrix0[elem.nodeB.Name, elem.nodeA.Name] = 1;
             }
             return AdjacencyMatrix;
         }
-
         public const double PositiveInfinity = 1.5e300;
-
-        public int[,] PlayFloydWarshall(List<XYZ[]> aristas)
+        public int[,] PlayFloydWarshall(ref ConnectorsSistem connectorsSistem)
         {
-            Aristas = new List<XYZ[]> (aristas);
+            nodos = connectorsSistem.Nodes;
 
-            nodos = new List<nodo>(GetNodos());
-
-            Edges = new List<edges>(GetEdges());
+            Edges = connectorsSistem.Edges;
 
             AdjacencyMatrix = (double[,])GetAdjacencyMatrix().Clone();
 
@@ -205,7 +132,7 @@ namespace Revit_ManageElectricalCircuit
         {
             //http://web.mit.edu/urban_or_book/www/book/chapter6/6.2.2.html
             //https://medium.com/@vighneshtiwari16377/floyd-warshall-dynamic-programming-algorithm-e2a899c3e5e6
-
+            path.Clear();
             path.Add(nodeInit);
             path.Add(nodeEnd);
 
@@ -239,7 +166,7 @@ namespace Revit_ManageElectricalCircuit
         public XYZ GetXYZNode(int node)
         {
             XYZ point = null;
-            foreach (nodo elem in nodos)
+            foreach (Node elem in nodos)
             {
                 if (node == elem.Name)
                 {
