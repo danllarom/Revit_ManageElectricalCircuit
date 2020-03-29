@@ -230,7 +230,6 @@ namespace Revit_ManageElectricalCircuit
                 }
                 path1.Add(elem);
             }
-
             return path1;
         }
     }

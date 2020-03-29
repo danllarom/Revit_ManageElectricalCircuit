@@ -33,6 +33,11 @@ namespace Revit_ManageElectricalCircuit
 
             try
             {
+                //Windos form
+                Form1 ventana = new Form1(doc);
+                ventana.Show();
+
+
                 //get all cable tray element in de model
                 FilteredElementCollector Collector = new FilteredElementCollector(doc);
                 Collector = GetConnectorElements(doc, false);
