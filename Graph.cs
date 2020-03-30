@@ -15,17 +15,17 @@ using System.Windows.Forms;
 namespace Revit_ManageElectricalCircuit
 {
     
-    class ConnectorsSistem
+    class Graph
     {
         public List<Node> Nodes = new List<Node> { };
         public List<Edge> Edges = new List<Edge> { };
         public int NodesCount;
 
         public ConnectorSet Connectors;
-        public ConnectorsSistem()
+        public Graph()
         {
         }
-        public ConnectorsSistem(ConnectorSet connectors)
+        public Graph(ConnectorSet connectors)
         {
             Connectors = connectors;
         }
@@ -98,7 +98,7 @@ namespace Revit_ManageElectricalCircuit
                 AddEdge(P[0], P[1]);
             }
         }
-        public void AddConnectorSetFromElement(Element elem)
+        public void AddConnectorSetFromElementConnector(Element elem)
         {
             ConnectorSet connectors = GetConnectors(elem);
             AddConnectorSet(connectors);
@@ -107,8 +107,53 @@ namespace Revit_ManageElectricalCircuit
         {
             foreach (Element elem in Collector)
             {
-                AddConnectorSetFromElement(elem);
+                AddConnectorSetFromElementConnector(elem);
             }
+        }
+        public void AddXYZFromElementSet(ElementSet Collector)
+        {
+            foreach (Element elem in Collector)
+            {
+                LocationPoint locationelem = elem.Location as LocationPoint;
+                XYZ XYZelem = locationelem.Point;
+                Node node = new Node();
+                GetNode(XYZelem, ref node);
+            }
+        }
+        public void moreCloseNodes(ref List<Node> nodes, ref Node Node, ref Node node)
+        {
+            Node = Nodes.First();
+            node = nodes.First();
+            foreach (Node elem in Nodes)
+            {
+                foreach (Node elem1 in nodes)
+                {
+                    if (Math.Abs(elem.Location.Subtract(elem1.Location).GetLength()) < Math.Abs(Node.Location.Subtract(node.Location).GetLength()))
+                    {
+                        Node = elem;
+                        node = elem1;
+                    }
+                }
+            }
+        }
+        public Node closeNode(Node nodeA)
+        {
+            Node closeNodo = null;
+            int j = 0;
+            foreach (Node elem in Nodes)
+            {
+                if (j == 0)
+                {
+                    closeNodo = elem;
+                    j++;
+                }
+                else if (Math.Abs(nodeA.Location.Subtract(elem.Location).GetLength()) < Math.Abs(nodeA.Location.Subtract(closeNodo.Location).GetLength()))
+                {
+                    closeNodo = elem;
+                    j++;
+                }
+            }
+            return closeNodo;
         }
         public void RenameNode()
         {

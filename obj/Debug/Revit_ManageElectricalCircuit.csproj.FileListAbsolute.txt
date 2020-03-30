@@ -6,3 +6,8 @@ C:\Users\Valhalla\source\repos\Revit_ManageElectricalCircuit\obj\Debug\Revit_Man
 C:\Users\Valhalla\source\repos\Revit_ManageElectricalCircuit\obj\Debug\Revit_ManageElectricalCircuit.csprojAssemblyReference.cache
 C:\Users\Valhalla\source\repos\Revit_ManageElectricalCircuit\obj\Debug\Revit_ManageElectricalCircuit.Form1.resources
 C:\Users\Valhalla\source\repos\Revit_ManageElectricalCircuit\obj\Debug\Revit_ManageElectricalCircuit.csproj.GenerateResource.cache
+C:\Users\Valhalla\source\repos\Revit_ManageElectricalCircuit\bin\Debug\AdvancedDataGridView.dll
+C:\Users\Valhalla\source\repos\Revit_ManageElectricalCircuit\bin\Debug\AdvancedDataGridView.xml
+C:\Users\Valhalla\source\repos\Revit_ManageElectricalCircuit\bin\Debug\fr\AdvancedDataGridView.resources.dll
+C:\Users\Valhalla\source\repos\Revit_ManageElectricalCircuit\bin\Debug\ru\AdvancedDataGridView.resources.dll
+C:\Users\Valhalla\source\repos\Revit_ManageElectricalCircuit\obj\Debug\Revit_ManageElectricalCircuit.csproj.CopyComplete

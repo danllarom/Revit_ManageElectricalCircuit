@@ -33,6 +33,8 @@ namespace Revit_ManageElectricalCircuit
 
             try
             {
+                Transaction trans2 = new Transaction(doc);
+                trans2.Start("Lab");
                 //Windos form
                 Form1 ventana = new Form1(doc);
                 ventana.Show();
@@ -42,12 +44,12 @@ namespace Revit_ManageElectricalCircuit
                 FilteredElementCollector Collector = new FilteredElementCollector(doc);
                 Collector = GetConnectorElements(doc, false);
 
-                ConnectorsSistem connectorsSistem = new ConnectorsSistem();
+                Graph connectorsSistem = new Graph();
                 connectorsSistem.AddConnectorSetFromFilteredElementCollector(Collector);
                 //connectorsSistem.RenameNode();
 
-                FloydWarshall floydWarshall = new FloydWarshall();
-                floydWarshall.PlayFloydWarshall(ref connectorsSistem);
+                FloydWarshall floydWarshall = new FloydWarshall(ref connectorsSistem);
+                floydWarshall.PlayFloydWarshall();
 
                 //MessageBox.Show(floydWarshall.nodos.Count().ToString());
 
@@ -55,33 +57,36 @@ namespace Revit_ManageElectricalCircuit
                 FilteredElementCollector collector1 = new FilteredElementCollector(doc);
                 collector1.OfCategory(BuiltInCategory.OST_ElectricalCircuit);
 
-                
-
                 foreach (ElectricalSystem elem in collector1)
                 {
                     Node nodeA = new Node();
                     Node nodeB = new Node();
+                    Node nodeC = new Node();
 
                     LocationPoint locationPanel = elem.BaseEquipment.Location as LocationPoint;
                     XYZ XYZPanel = locationPanel.Point;
+                    nodeA.Location = XYZPanel;
+                    nodeA = floydWarshall.graph.closeNode(nodeA);
 
-                    nodeA = closeNode(XYZPanel, floydWarshall.nodos);
-
+                    Graph receptor = new Graph();
+                    receptor.AddXYZFromElementSet(elem.Elements);
+                    //TODO: calculate the short cut for the receptor
+                    receptor.moreCloseNodes(ref floydWarshall.graph.Nodes, ref nodeC, ref nodeB);
+                    
                     List<XYZ> CircuitsElement = new List<XYZ>();
                     foreach (FamilyInstance elem1 in elem.Elements)
                     {
                         LocationPoint locationelem = elem1.Location as LocationPoint;
                         XYZ XYZelem = locationelem.Point;
                         CircuitsElement.Add(XYZelem);
-                        nodeB = closeNode(XYZelem, floydWarshall.nodos);
                     }
                     floydWarshall.GetPath(nodeA.Name, nodeB.Name);
 
-                    Transaction trans2 = new Transaction(doc);
-                    trans2.Start("Lab");
+                    
                     elem.SetCircuitPath(floydWarshall.organizePath(nodeA.Name, nodeB.Name, XYZPanel, CircuitsElement));
-                    trans2.Commit();
+                    
                 }
+                trans2.Commit();
             }
             //If the user right-clicks or presses Esc, handle the exception
             catch (Autodesk.Revit.Exceptions.OperationCanceledException)
@@ -174,31 +179,6 @@ namespace Revit_ManageElectricalCircuit
             collector.WherePasses(classFilter);
 
             return collector;
-        }
-        static Node closeNode(XYZ node, List<Node> nodos)
-        {
-            Node closeNodo = new Node();
-            int j = 0;
-            foreach (Node elem in nodos)
-            {
-                if (j == 0)
-                {
-                    closeNodo = elem;
-                    j++;
-                }
-                else if (Math.Abs(node.Subtract(elem.Location).GetLength()) < Math.Abs(node.Subtract(closeNodo.Location).GetLength()))
-                {
-                    closeNodo = elem;
-                    j++;
-                }
-            }
-            return closeNodo;
-        }
-        static Node[] moreCloseNodes(List<Node> nodesA, List<Node> nodesB)
-        {
-
-            Node[] closeNodes = new Node[2];
-            return closeNodes;
         }
     }
 }

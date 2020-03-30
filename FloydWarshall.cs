@@ -39,9 +39,11 @@ namespace Revit_ManageElectricalCircuit
         public List<Node> nodos = new List<Node> { };
         public List<Edge> Edges = new List<Edge> { };
         public List<int> path = new List<int>();
+        public Graph graph = new Graph();
 
-        public FloydWarshall()
+        public FloydWarshall(ref Graph graph1)
         {
+            graph = graph1;
         }
         public double[,] GetAdjacencyMatrix()
         {
@@ -72,11 +74,11 @@ namespace Revit_ManageElectricalCircuit
             return AdjacencyMatrix;
         }
         public const double PositiveInfinity = 1.5e300;
-        public int[,] PlayFloydWarshall(ref ConnectorsSistem connectorsSistem)
+        public int[,] PlayFloydWarshall()
         {
-            nodos = connectorsSistem.Nodes;
+            nodos = graph.Nodes;
 
-            Edges = connectorsSistem.Edges;
+            Edges = graph.Edges;
 
             AdjacencyMatrix = (double[,])GetAdjacencyMatrix().Clone();
 

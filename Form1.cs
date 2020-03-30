@@ -17,6 +17,8 @@ using Form = System.Windows.Forms.Form;
 
 //https://www.encodedna.com/2013/02/show-combobox-datagridview.htm
 
+//advanced datagridview: to create ilter in datagridview column
+
 namespace Revit_ManageElectricalCircuit
 {
     public struct Circuit
@@ -47,7 +49,6 @@ namespace Revit_ManageElectricalCircuit
     public partial class Form1 : Form
     {
         public Document doc = null;
-
         public Form1(Document Doc)
         {
             //TODO: Add filter to column.
@@ -77,28 +78,48 @@ namespace Revit_ManageElectricalCircuit
             }
 
             List<Circuit> cicuits = new List<Circuit>();
-            int n = 0;
+            
             foreach (ElectricalSystem elem in collector)
             {
-                Circuit circuit = new Circuit(false, elem.BaseEquipment.Name,"None" , "None", elem.CircuitNumber, elem.LoadName, "None", "None", elem);
+                //TODO: is correct use "none" in ths case?
+                string panelName = null;
+                if (elem.PanelName != null)
+                {
+                    panelName = elem.PanelName;
+                }
+                else
+                {
+                    panelName = "None";
+                }
+                Circuit circuit = new Circuit(false, panelName, "None" , "None", elem.CircuitNumber, elem.LoadName, "None", "None", elem);
                 cicuits.Add(circuit);
-                dataGridView1.Rows[n].Cells[0].Value = circuit.Select;
-                dataGridView1.Rows[n].Cells[1].Value = circuit.PanelName;
-                dataGridView1.Rows[n].Cells[2].Value = circuit.UpperLevelPanel;
-                dataGridView1.Rows[n].Cells[3].Value = circuit.LowerLevelPanel;
-                dataGridView1.Rows[n].Cells[4].Value = circuit.CircuitNumber;
-                dataGridView1.Rows[n].Cells[5].Value = circuit.CircuitName;
-                dataGridView1.Rows[n].Cells[6].Value = circuit.UpperLevelElem;
-                dataGridView1.Rows[n].Cells[7].Value = circuit.LowerLevelElem;
-                n++;
             }
-            //checkedListBox1.Items.AddRange(circuitos);
-            //checkedListBox1.CheckOnClick = true;
+
+            foreach (Circuit elem in cicuits)
+            {
+                int n = dataGridView1.Rows.Add();
+                dataGridView1.Rows[n].Cells[0].Value = elem.Select;
+                dataGridView1.Rows[n].Cells[1].Value = elem.PanelName;
+                dataGridView1.Rows[n].Cells[2].Value = elem.UpperLevelPanel;
+                dataGridView1.Rows[n].Cells[3].Value = elem.LowerLevelPanel;
+                dataGridView1.Rows[n].Cells[4].Value = elem.CircuitNumber;
+                dataGridView1.Rows[n].Cells[5].Value = elem.CircuitName;
+                dataGridView1.Rows[n].Cells[6].Value = elem.UpperLevelElem;
+                dataGridView1.Rows[n].Cells[7].Value = elem.LowerLevelElem;
+            }
+
+
+
+
+
+
+
+
         }
 
         private void DataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
         {
-
+            
         }
     }
 }
