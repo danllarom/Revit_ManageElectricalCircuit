@@ -136,9 +136,8 @@ namespace Revit_ManageElectricalCircuit
                 }
             }
         }
-        public Node closeNode(Node nodeA)
+        public void closeNode(Node nodeA, ref Node closeNodo)
         {
-            Node closeNodo = null;
             int j = 0;
             foreach (Node elem in Nodes)
             {
@@ -153,7 +152,6 @@ namespace Revit_ManageElectricalCircuit
                     j++;
                 }
             }
-            return closeNodo;
         }
         public void RenameNode()
         {

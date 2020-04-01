@@ -77,7 +77,6 @@ namespace Revit_ManageElectricalCircuit
         public int[,] PlayFloydWarshall()
         {
             nodos = graph.Nodes;
-
             Edges = graph.Edges;
 
             AdjacencyMatrix = (double[,])GetAdjacencyMatrix().Clone();
@@ -206,10 +205,10 @@ namespace Revit_ManageElectricalCircuit
                 }
             }
         }
-        public List<XYZ> organizePath(int nodeInit, int nodeEnd, XYZ nodePanel, List<XYZ> element)
+        public List<XYZ> organizePath(XYZ nodePanel, Graph element)
         {
             List<XYZ> path1 = new List<XYZ>();
-
+            //DOTO:la distancia entre dos puntos no debe ser menos que la tolerancia
             if (nodePanel != null)
             {
                 path1.Add(nodePanel);
@@ -223,14 +222,14 @@ namespace Revit_ManageElectricalCircuit
                 }
                 path1.Add(GetXYZNode(elem));
             }
-            foreach (XYZ elem in element)
+            foreach (Node elem in element.Nodes)
             {
-                if (Math.Abs(path1.Last().Z - elem.Z) > 1e-9)
+                if (Math.Abs(path1.Last().Z - elem.Location.Z) > 1e-9)
                 {
-                    XYZ a = new XYZ(path1.Last().X, path1.Last().Y, elem.Z);
+                    XYZ a = new XYZ(path1.Last().X, path1.Last().Y, elem.Location.Z);
                     path1.Add(a);
                 }
-                path1.Add(elem);
+                path1.Add(elem.Location);
             }
             return path1;
         }

@@ -46,24 +46,49 @@ namespace Revit_ManageElectricalCircuit
         public string LowerLevelElem { get; set; }
         public ElectricalSystem ElementCircuit { get; set; }
     }
+    
+
     public partial class Form1 : Form
     {
         public Document doc = null;
+        private Graph connectorsSistem = new Graph();
+        private FloydWarshall floydWarshall;
+        public FilteredElementCollector Circuits;
+        public FilteredElementCollector LevelsCollector;
+        List<Level> levels = new List<Level>();
+        List<Circuit> cicuits = new List<Circuit>();
+
         public Form1(Document Doc)
         {
-            //TODO: Add filter to column.
             doc = Doc;
+
+            //get all cable tray element in de model
+            FilteredElementCollector Collector = new FilteredElementCollector(doc);
+            Collector = GetConnectorElements(doc, false);
+
+            //create graph to cable tray
+            connectorsSistem = new Graph();
+            connectorsSistem.AddConnectorSetFromFilteredElementCollector(Collector);
+
+            //calculate floydWarshall
+            floydWarshall = new FloydWarshall(ref connectorsSistem);
+            //TODO: incluede playfloydWarshall in constructor.
+            floydWarshall.PlayFloydWarshall();
+
+            //Pick Circuit
+            Circuits = new FilteredElementCollector(doc);
+            Circuits.OfCategory(BuiltInCategory.OST_ElectricalCircuit);
+
+            //Pick Levels
+            FilteredElementCollector Levels = new FilteredElementCollector(doc);
+            Levels.OfCategory(BuiltInCategory.OST_Levels);
+
             InitializeComponent();
-            FilteredElementCollector collector = new FilteredElementCollector(doc);
-            collector.OfCategory(BuiltInCategory.OST_ElectricalCircuit);
 
-            FilteredElementCollector collector2 = new FilteredElementCollector(doc);
-            collector2.OfCategory(BuiltInCategory.OST_Levels);
-
-            List<Level> levels = new List<Level>();
+            
             //TODO: what happen when a level take default option of this program?
             List<string> levelOption = new List<string>{ "None", "Level Upper", "Level Lower"};
-            foreach (Element elem in collector2)
+            foreach (Element elem in Levels)
             {
                 levels.Add(elem as Level);
                 levelOption.Add(elem.Name);
@@ -77,9 +102,7 @@ namespace Revit_ManageElectricalCircuit
                 Column8.Items.Add(elem);
             }
 
-            List<Circuit> cicuits = new List<Circuit>();
-            
-            foreach (ElectricalSystem elem in collector)
+            foreach (ElectricalSystem elem in Circuits)
             {
                 //TODO: is correct use "none" in ths case?
                 string panelName = null;
@@ -107,19 +130,119 @@ namespace Revit_ManageElectricalCircuit
                 dataGridView1.Rows[n].Cells[6].Value = elem.UpperLevelElem;
                 dataGridView1.Rows[n].Cells[7].Value = elem.LowerLevelElem;
             }
-
-
-
-
-
-
-
-
         }
 
         private void DataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
         {
             
+        }
+
+        private void CheckAll_Click(object sender, EventArgs e)
+        {
+            //TODO: ccambiar el valor tanto en la tabla como en las lista de circuitos
+            for (int i = 0; i < dataGridView1.Rows.Count; i++)
+            {
+                dataGridView1.Rows[i].Cells[0].Value = true;
+            }
+        }
+
+        private void CheckNone_Click(object sender, EventArgs e)
+        {
+            //TODO: ccambiar el valor tanto en la tabla como en las lista de circuitos
+            for (int i = 0; i < dataGridView1.Rows.Count; i++)
+            {
+                dataGridView1.Rows[i].Cells[0].Value = false;
+            }
+        }
+
+        private void Accept_Click(object sender, EventArgs e)
+        {
+            foreach (ElectricalSystem elem in Circuits)
+            {
+                Node nodeA = new Node();
+                Node nodeB = new Node();
+                Node nodeC = new Node();
+
+                LocationPoint locationPanel = elem.BaseEquipment.Location as LocationPoint;
+                XYZ XYZPanel = locationPanel.Point;
+                nodeA.Location = XYZPanel;
+                floydWarshall.graph.closeNode(nodeA, ref nodeA);
+
+                Graph receptor = new Graph();
+                receptor.AddXYZFromElementSet(elem.Elements);
+                //TODO: calculate the short cut for the receptor
+                receptor.moreCloseNodes(ref floydWarshall.graph.Nodes, ref nodeC, ref nodeB);
+                floydWarshall.GetPath(nodeA.Name, nodeB.Name);
+                elem.SetCircuitPath(floydWarshall.organizePath(XYZPanel, receptor));
+            }
+        }
+        static FilteredElementCollector GetConnectorElements(Document doc, bool include_wires)
+        {
+            //https://thebuildingcoder.typepad.com/blog/2010/06/retrieve-mep-elements-and-connectors.html
+            // what categories of family instances
+            // are we interested in?
+
+            BuiltInCategory[] bics = new BuiltInCategory[] {
+                //BuiltInCategory.OST_CableTray,
+                BuiltInCategory.OST_CableTrayFitting,
+                BuiltInCategory.OST_Conduit,
+                BuiltInCategory.OST_ConduitFitting,
+                //BuiltInCategory.OST_DuctCurves,
+                //BuiltInCategory.OST_DuctFitting,
+                //BuiltInCategory.OST_DuctTerminal,
+                //BuiltInCategory.OST_ElectricalEquipment,
+                //BuiltInCategory.OST_ElectricalFixtures,
+                //BuiltInCategory.OST_LightingDevices,
+                //BuiltInCategory.OST_LightingFixtures,
+                //BuiltInCategory.OST_MechanicalEquipment,
+                //BuiltInCategory.OST_PipeCurves,
+                //BuiltInCategory.OST_PipeFitting,
+                //BuiltInCategory.OST_PlumbingFixtures,
+                //BuiltInCategory.OST_SpecialityEquipment,
+                //BuiltInCategory.OST_Sprinklers,
+                //BuiltInCategory.OST_Wire,
+            };
+
+            IList<ElementFilter> a
+              = new List<ElementFilter>(bics.Count());
+
+            foreach (BuiltInCategory bic in bics)
+            {
+                a.Add(new ElementCategoryFilter(bic));
+            }
+
+            LogicalOrFilter categoryFilter
+              = new LogicalOrFilter(a);
+
+            LogicalAndFilter familyInstanceFilter
+              = new LogicalAndFilter(categoryFilter,
+                new ElementClassFilter(
+                  typeof(FamilyInstance)));
+
+            IList<ElementFilter> b
+              = new List<ElementFilter>(6);
+
+            b.Add(new ElementClassFilter(typeof(CableTray)));
+            b.Add(new ElementClassFilter(typeof(Conduit)));
+            //b.Add(new ElementClassFilter(typeof(Duct)));
+            //b.Add(new ElementClassFilter(typeof(Pipe)));
+
+            if (include_wires)
+            {
+                b.Add(new ElementClassFilter(typeof(Wire)));
+            }
+
+            b.Add(familyInstanceFilter);
+
+            LogicalOrFilter classFilter
+              = new LogicalOrFilter(b);
+
+            FilteredElementCollector collector
+              = new FilteredElementCollector(doc);
+
+            collector.WherePasses(classFilter);
+
+            return collector;
         }
     }
 }
