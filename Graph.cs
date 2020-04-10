@@ -120,8 +120,10 @@ namespace Revit_ManageElectricalCircuit
                 GetNode(XYZelem, ref node);
             }
         }
-        public void moreCloseNodes(ref List<Node> nodes, ref Node Node, ref Node node)
+        public string moreCloseNodes(ref List<Node> nodes, ref Node Node, ref Node node)
         {
+            //TODO: detecting error (levels)
+            string mesage = "Correct";
             Node = Nodes.First();
             node = nodes.First();
             foreach (Node elem in Nodes)
@@ -135,23 +137,98 @@ namespace Revit_ManageElectricalCircuit
                     }
                 }
             }
+            return mesage;
         }
-        public void closeNode(Node nodeA, ref Node closeNodo)
+        public string closeNode(Node nodeA, ref Node closeNodo, Level LevelUpper, Level LevelLower)
         {
-            int j = 0;
-            foreach (Node elem in Nodes)
+            string mesageError = "Correct";
+            bool first = true;
+            if ((LevelUpper!=null) && (LevelLower!=null))
             {
-                if (j == 0)
+                foreach (Node elem in Nodes)
                 {
-                    closeNodo = elem;
-                    j++;
+                    if ((LevelUpper.Elevation > elem.Location.Z) && (LevelLower.Elevation < elem.Location.Z))
+                    {
+                        if (first == true)
+                        {
+                            closeNodo = elem;
+                            first = false;
+                        }
+                        else if (Math.Abs(nodeA.Location.Subtract(elem.Location).GetLength()) < Math.Abs(nodeA.Location.Subtract(closeNodo.Location).GetLength()))
+                        {
+                            closeNodo = elem;
+                        }
+                    }
                 }
-                else if (Math.Abs(nodeA.Location.Subtract(elem.Location).GetLength()) < Math.Abs(nodeA.Location.Subtract(closeNodo.Location).GetLength()))
+                if (first== true)
                 {
-                    closeNodo = elem;
-                    j++;
+                    mesageError = "The levels are not correct";
                 }
             }
+            else if ((LevelUpper != null) && (LevelLower == null))
+            {
+                foreach (Node elem in Nodes)
+                {
+                    if (LevelUpper.Elevation > elem.Location.Z)
+                    {
+                        if (first == true)
+                        {
+                            closeNodo = elem;
+                            first = false;
+                        }
+                        else if (Math.Abs(nodeA.Location.Subtract(elem.Location).GetLength()) < Math.Abs(nodeA.Location.Subtract(closeNodo.Location).GetLength()))
+                        {
+                            closeNodo = elem;
+                        }
+                    }
+                }
+                if (first == true)
+                {
+                    mesageError = "The levels are not correct";
+                }
+            }
+            else if ((LevelUpper == null) && (LevelLower != null))
+            {
+                foreach (Node elem in Nodes)
+                {
+                    if (LevelLower.Elevation < elem.Location.Z)
+                    {
+                        if (first == true)
+                        {
+                            closeNodo = elem;
+                            first = false;
+                        }
+                        else if (Math.Abs(nodeA.Location.Subtract(elem.Location).GetLength()) < Math.Abs(nodeA.Location.Subtract(closeNodo.Location).GetLength()))
+                        {
+                            closeNodo = elem;
+                        }
+                    }
+                }
+                if (first == true)
+                {
+                    mesageError = "The levels are not correct";
+                }
+            }
+            else if ((LevelUpper == null) && (LevelLower == null))
+            {
+                foreach (Node elem in Nodes)
+                {
+                    if (first == true)
+                    {
+                        closeNodo = elem;
+                        first = false;
+                    }
+                    else if (Math.Abs(nodeA.Location.Subtract(elem.Location).GetLength()) < Math.Abs(nodeA.Location.Subtract(closeNodo.Location).GetLength()))
+                    {
+                        closeNodo = elem;
+                    }
+                }
+                if (first == true)
+                {
+                    mesageError = "The levels are not correct";
+                }
+            }
+            return mesageError;
         }
         public void RenameNode()
         {

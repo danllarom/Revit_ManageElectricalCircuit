@@ -15,6 +15,8 @@ using System.Diagnostics;
 
 //OTHER
 //https://thebuildingcoder.typepad.com/blog/2010/07/retrieve-structural-elements.html
+//A Simpler Dockable Panel Sample
+//https://thebuildingcoder.typepad.com/blog/2013/05/a-simpler-dockable-panel-sample.html
 
 namespace Revit_ManageElectricalCircuit
 {

@@ -129,7 +129,7 @@ namespace Revit_ManageElectricalCircuit
             }
             return PathMatrix;
         }
-        public List<int> GetPath(int nodeInit, int nodeEnd)
+        public string GetPath(int nodeInit, int nodeEnd)
         {
             //http://web.mit.edu/urban_or_book/www/book/chapter6/6.2.2.html
             //https://medium.com/@vighneshtiwari16377/floyd-warshall-dynamic-programming-algorithm-e2a899c3e5e6
@@ -137,32 +137,35 @@ namespace Revit_ManageElectricalCircuit
             path.Add(nodeInit);
             path.Add(nodeEnd);
 
-            readPathMatrix(nodeInit, nodeEnd);
-
+            string mesage = null;
+            mesage = readPathMatrix(nodeInit, nodeEnd);
             List<int> path1 = new List<int>(path);
             path.Clear();
             path.Add(nodeInit);
             path1.Remove(nodeInit);
 
-            while (true)
+            if (mesage == "Correct")
             {
-                //TODO: evitar el bucle infinito si i no aumenta
-                foreach (int elem in path1)
+                while (true)
                 {
-                    if (AdjacencyMatrix0[nodeInit, elem] == 1)
+                    //TODO: evitar el bucle infinito si i no aumenta
+                    foreach (int elem in path1)
                     {
-                        path.Add(elem);
-                        path1.Remove(elem);
-                        nodeInit = elem;
+                        if (AdjacencyMatrix0[nodeInit, elem] == 1)
+                        {
+                            path.Add(elem);
+                            path1.Remove(elem);
+                            nodeInit = elem;
+                            break;
+                        }
+                    }
+                    if (nodeInit == nodeEnd)
+                    {
                         break;
                     }
                 }
-                if (nodeInit == nodeEnd)
-                {
-                    break;
-                }
             }
-            return path;
+            return mesage;
         }
         public XYZ GetXYZNode(int node)
         {
@@ -177,33 +180,43 @@ namespace Revit_ManageElectricalCircuit
             }
             return point;
         }
-        public void readPathMatrix(int nodeInit, int nodeEnd)
+        public string readPathMatrix(int nodeInit, int nodeEnd)
         {
             //TODO: evitar el bucles infinitos si puediera ocurrir
+            //TODO: que pasa si no hay bandejas
+            //TODO: que pasa si el sistema de bajdejas esta dividido en dos grupos que no estan conectados
+            string mesage = "Correct";
             if (((PathMatrix[nodeInit, nodeEnd] != nodeInit) && (PathMatrix[nodeInit, nodeEnd] != nodeEnd))|| ((PathMatrix[nodeEnd, nodeInit] != nodeInit) && (PathMatrix[nodeEnd, nodeInit] != nodeEnd)))
             {
                 int node = nodeEnd;
                 node = PathMatrix[nodeInit, node];
                 path.Add(node);
+                if ((node != -1))
+                {
+                    if ((PathMatrix[nodeInit, node] != nodeInit) && (PathMatrix[nodeInit, node] != node) && (node != -1))
+                    {
+                        mesage = readPathMatrix(nodeInit, node);
+                    }
+                    else if ((PathMatrix[node, nodeInit] != nodeInit) && (PathMatrix[node, nodeInit] != node) && (node != -1))
+                    {
+                        mesage = readPathMatrix(node, nodeInit);
+                    }
 
-                if ((PathMatrix[nodeInit, node] != nodeInit) && (PathMatrix[nodeInit, node] != node) && (node != -1))
-                {
-                    readPathMatrix(nodeInit, node);
+                    if ((PathMatrix[nodeEnd, node] != nodeEnd) && (PathMatrix[nodeEnd, node] != node) && (node != -1))
+                    {
+                        mesage = readPathMatrix(nodeEnd, node);
+                    }
+                    else if ((PathMatrix[node, nodeEnd] != nodeEnd) && (PathMatrix[node, nodeEnd] != node) && (node != -1))
+                    {
+                        mesage = readPathMatrix(node, nodeEnd);
+                    }
                 }
-                else if ((PathMatrix[node, nodeInit] != nodeInit) && (PathMatrix[node, nodeInit] != node) && (node != -1))
+                else
                 {
-                    readPathMatrix(node, nodeInit);
-                }
-
-                if ((PathMatrix[nodeEnd, node] != nodeEnd) && (PathMatrix[nodeEnd, node] != node) && (node != -1))
-                {
-                    readPathMatrix(nodeEnd, node);
-                }
-                else if ((PathMatrix[node, nodeEnd] != nodeEnd) && (PathMatrix[node, nodeEnd] != node) && (node != -1))
-                {
-                    readPathMatrix(node, nodeEnd);
+                    mesage = "The sistem is not valid";
                 }
             }
+            return mesage;
         }
         public List<XYZ> organizePath(XYZ nodePanel, Graph element)
         {
