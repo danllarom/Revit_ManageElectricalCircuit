@@ -14,7 +14,7 @@ using System.Windows.Forms;
 
 namespace Revit_ManageElectricalCircuit
 {
-    class Edge
+    public class Edge
     {
         public Node nodeA = null;
         public Node nodeB = null;
@@ -24,7 +24,10 @@ namespace Revit_ManageElectricalCircuit
         {
             nodeA = nodea;
             nodeB = nodeb;
-            Lenth = Math.Abs(nodeA.Location.Subtract(nodeA.Location).GetLength());
+
+            XYZ a = nodeA.Location.Subtract(nodeB.Location);
+            double b = a.GetLength();
+            Lenth = Math.Abs(b);
         }
     }
 }

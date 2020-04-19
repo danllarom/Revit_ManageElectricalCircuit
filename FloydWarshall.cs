@@ -31,9 +31,9 @@ using System.Windows.Forms;
 
 namespace Revit_ManageElectricalCircuit
 {
-    class FloydWarshall
+    public class FloydWarshall
     {
-        public double[,] AdjacencyMatrix=null;
+        public double[,] AdjacencyMatrix = null;
         public double[,] AdjacencyMatrix0 = null;
         public int[,] PathMatrix = null;
         public List<Node> nodos = new List<Node> { };
@@ -79,7 +79,7 @@ namespace Revit_ManageElectricalCircuit
             nodos = graph.Nodes;
             Edges = graph.Edges;
 
-            AdjacencyMatrix = (double[,])GetAdjacencyMatrix().Clone();
+            GetAdjacencyMatrix();
 
             //PathMatrix
             //     1-2-3-4=j
@@ -102,10 +102,6 @@ namespace Revit_ManageElectricalCircuit
                     {
                         PathMatrix[i, j] = -1;
                     }
-                    if (i == j)
-                    {
-                        PathMatrix[i, j] = i;
-                    }
                 }
             }
             
@@ -121,7 +117,8 @@ namespace Revit_ManageElectricalCircuit
                             if (((AdjacencyMatrix[i, k] + AdjacencyMatrix[k, j]) < AdjacencyMatrix[i, j]))
                             {
                                 AdjacencyMatrix[i, j] = AdjacencyMatrix[i, k] + AdjacencyMatrix[k, j];
-                                PathMatrix[i, j] = k;
+                                //PathMatrix[i, j] = k;
+                                PathMatrix[i, j] = PathMatrix[k, i];
                             }
                         }
                     }
@@ -140,10 +137,11 @@ namespace Revit_ManageElectricalCircuit
             string mesage = null;
             mesage = readPathMatrix(nodeInit, nodeEnd);
             List<int> path1 = new List<int>(path);
+            
             path.Clear();
             path.Add(nodeInit);
             path1.Remove(nodeInit);
-
+            
             if (mesage == "Correct")
             {
                 while (true)
@@ -165,6 +163,7 @@ namespace Revit_ManageElectricalCircuit
                     }
                 }
             }
+            
             return mesage;
         }
         public XYZ GetXYZNode(int node)
@@ -186,27 +185,38 @@ namespace Revit_ManageElectricalCircuit
             //TODO: que pasa si no hay bandejas
             //TODO: que pasa si el sistema de bajdejas esta dividido en dos grupos que no estan conectados
             string mesage = "Correct";
+            
             if (((PathMatrix[nodeInit, nodeEnd] != nodeInit) && (PathMatrix[nodeInit, nodeEnd] != nodeEnd))|| ((PathMatrix[nodeEnd, nodeInit] != nodeInit) && (PathMatrix[nodeEnd, nodeInit] != nodeEnd)))
             {
                 int node = nodeEnd;
-                node = PathMatrix[nodeInit, node];
+                if (AdjacencyMatrix[nodeInit, nodeEnd] < AdjacencyMatrix[nodeEnd, nodeInit])
+                {
+                    node = PathMatrix[nodeInit, nodeEnd];
+                }
+                else
+                {
+                    node = PathMatrix[nodeEnd, nodeInit];
+                }
+                //node = PathMatrix[nodeInit, node];
+                
+                
                 path.Add(node);
                 if ((node != -1))
                 {
-                    if ((PathMatrix[nodeInit, node] != nodeInit) && (PathMatrix[nodeInit, node] != node) && (node != -1))
+                    if ((PathMatrix[nodeInit, node] != nodeInit) && (PathMatrix[nodeInit, node] != node))
                     {
                         mesage = readPathMatrix(nodeInit, node);
                     }
-                    else if ((PathMatrix[node, nodeInit] != nodeInit) && (PathMatrix[node, nodeInit] != node) && (node != -1))
+                    else if ((PathMatrix[node, nodeInit] != nodeInit) && (PathMatrix[node, nodeInit] != node))
                     {
                         mesage = readPathMatrix(node, nodeInit);
                     }
 
-                    if ((PathMatrix[nodeEnd, node] != nodeEnd) && (PathMatrix[nodeEnd, node] != node) && (node != -1))
+                    if ((PathMatrix[nodeEnd, node] != nodeEnd) && (PathMatrix[nodeEnd, node] != node))
                     {
                         mesage = readPathMatrix(nodeEnd, node);
                     }
-                    else if ((PathMatrix[node, nodeEnd] != nodeEnd) && (PathMatrix[node, nodeEnd] != node) && (node != -1))
+                    else if ((PathMatrix[node, nodeEnd] != nodeEnd) && (PathMatrix[node, nodeEnd] != node))
                     {
                         mesage = readPathMatrix(node, nodeEnd);
                     }
@@ -216,6 +226,7 @@ namespace Revit_ManageElectricalCircuit
                     mesage = "The sistem is not valid";
                 }
             }
+            
             return mesage;
         }
         public List<XYZ> organizePath(XYZ nodePanel, Graph element)

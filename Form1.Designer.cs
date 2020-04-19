@@ -38,9 +38,10 @@
             this.Column4 = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.UpperLevelElement = new System.Windows.Forms.DataGridViewComboBoxColumn();
             this.LowerLevelElement = new System.Windows.Forms.DataGridViewComboBoxColumn();
+            this.ServiceType = new System.Windows.Forms.DataGridViewComboBoxColumn();
             this.checkAll = new System.Windows.Forms.Button();
             this.checkNone = new System.Windows.Forms.Button();
-            this.accept = new System.Windows.Forms.Button();
+            this.Cancel = new System.Windows.Forms.Button();
             this.Close = new System.Windows.Forms.Button();
             this.Apply = new System.Windows.Forms.Button();
             this.progressBar1 = new System.Windows.Forms.ProgressBar();
@@ -52,7 +53,7 @@
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(764, 246);
+            this.label1.Location = new System.Drawing.Point(846, 246);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(35, 13);
             this.label1.TabIndex = 1;
@@ -70,10 +71,11 @@
             this.Column3,
             this.Column4,
             this.UpperLevelElement,
-            this.LowerLevelElement});
-            this.dataGridView1.Location = new System.Drawing.Point(9, 12);
+            this.LowerLevelElement,
+            this.ServiceType});
+            this.dataGridView1.Location = new System.Drawing.Point(12, 12);
             this.dataGridView1.Name = "dataGridView1";
-            this.dataGridView1.Size = new System.Drawing.Size(789, 227);
+            this.dataGridView1.Size = new System.Drawing.Size(869, 227);
             this.dataGridView1.TabIndex = 2;
             // 
             // Column1
@@ -137,11 +139,20 @@
             this.LowerLevelElement.Resizable = System.Windows.Forms.DataGridViewTriState.True;
             this.LowerLevelElement.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Automatic;
             // 
+            // ServiceType
+            // 
+            this.ServiceType.DisplayStyle = System.Windows.Forms.DataGridViewComboBoxDisplayStyle.ComboBox;
+            this.ServiceType.DisplayStyleForCurrentCellOnly = true;
+            this.ServiceType.HeaderText = "Service Type";
+            this.ServiceType.Name = "ServiceType";
+            this.ServiceType.Resizable = System.Windows.Forms.DataGridViewTriState.True;
+            this.ServiceType.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Automatic;
+            // 
             // checkAll
             // 
-            this.checkAll.Location = new System.Drawing.Point(809, 188);
+            this.checkAll.Location = new System.Drawing.Point(891, 188);
             this.checkAll.Name = "checkAll";
-            this.checkAll.Size = new System.Drawing.Size(74, 23);
+            this.checkAll.Size = new System.Drawing.Size(83, 23);
             this.checkAll.TabIndex = 3;
             this.checkAll.Text = "Check All";
             this.checkAll.UseVisualStyleBackColor = true;
@@ -149,27 +160,27 @@
             // 
             // checkNone
             // 
-            this.checkNone.Location = new System.Drawing.Point(809, 217);
+            this.checkNone.Location = new System.Drawing.Point(891, 217);
             this.checkNone.Name = "checkNone";
-            this.checkNone.Size = new System.Drawing.Size(74, 23);
+            this.checkNone.Size = new System.Drawing.Size(83, 23);
             this.checkNone.TabIndex = 4;
             this.checkNone.Text = "Check None";
             this.checkNone.UseVisualStyleBackColor = true;
             this.checkNone.Click += new System.EventHandler(this.CheckNone_Click);
             // 
-            // accept
+            // Cancel
             // 
-            this.accept.Location = new System.Drawing.Point(724, 272);
-            this.accept.Name = "accept";
-            this.accept.Size = new System.Drawing.Size(74, 23);
-            this.accept.TabIndex = 6;
-            this.accept.Text = "Accept";
-            this.accept.UseVisualStyleBackColor = true;
-            this.accept.Click += new System.EventHandler(this.Accept_Click);
+            this.Cancel.Location = new System.Drawing.Point(891, 272);
+            this.Cancel.Name = "Cancel";
+            this.Cancel.Size = new System.Drawing.Size(74, 23);
+            this.Cancel.TabIndex = 6;
+            this.Cancel.Text = "Cancel";
+            this.Cancel.UseVisualStyleBackColor = true;
+            this.Cancel.Click += new System.EventHandler(this.Cancel_Click);
             // 
             // Close
             // 
-            this.Close.Location = new System.Drawing.Point(809, 272);
+            this.Close.Location = new System.Drawing.Point(807, 272);
             this.Close.Name = "Close";
             this.Close.Size = new System.Drawing.Size(74, 23);
             this.Close.TabIndex = 7;
@@ -179,7 +190,7 @@
             // 
             // Apply
             // 
-            this.Apply.Location = new System.Drawing.Point(640, 272);
+            this.Apply.Location = new System.Drawing.Point(722, 272);
             this.Apply.Name = "Apply";
             this.Apply.Size = new System.Drawing.Size(74, 23);
             this.Apply.TabIndex = 8;
@@ -215,13 +226,13 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(893, 300);
+            this.ClientSize = new System.Drawing.Size(983, 300);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.progressBar1);
             this.Controls.Add(this.Apply);
             this.Controls.Add(this.Close);
-            this.Controls.Add(this.accept);
+            this.Controls.Add(this.Cancel);
             this.Controls.Add(this.checkNone);
             this.Controls.Add(this.checkAll);
             this.Controls.Add(this.dataGridView1);
@@ -239,7 +250,7 @@
         private System.Windows.Forms.DataGridView dataGridView1;
         private System.Windows.Forms.Button checkAll;
         private System.Windows.Forms.Button checkNone;
-        private System.Windows.Forms.Button accept;
+        private System.Windows.Forms.Button Cancel;
         private System.Windows.Forms.Button Close;
         private System.Windows.Forms.Button Apply;
         private System.Windows.Forms.ProgressBar progressBar1;
@@ -253,5 +264,6 @@
         private System.Windows.Forms.DataGridViewTextBoxColumn Column4;
         private System.Windows.Forms.DataGridViewComboBoxColumn UpperLevelElement;
         private System.Windows.Forms.DataGridViewComboBoxColumn LowerLevelElement;
+        private System.Windows.Forms.DataGridViewComboBoxColumn ServiceType;
     }
 }

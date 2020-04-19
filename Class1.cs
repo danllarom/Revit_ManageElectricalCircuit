@@ -17,6 +17,8 @@ using System.Diagnostics;
 //https://thebuildingcoder.typepad.com/blog/2010/07/retrieve-structural-elements.html
 //A Simpler Dockable Panel Sample
 //https://thebuildingcoder.typepad.com/blog/2013/05/a-simpler-dockable-panel-sample.html
+//instalator -> Inno setup
+//https://www.youtube.com/watch?v=1kkRPfWBnLw
 
 namespace Revit_ManageElectricalCircuit
 {
@@ -30,18 +32,25 @@ namespace Revit_ManageElectricalCircuit
             //Get application and documnet objects
             UIApplication uiapp = commandData.Application;
             Document doc = uiapp.ActiveUIDocument.Document;
-            
+
             try
             {
                 //Init transaction
-                Transaction trans2 = new Transaction(doc);
-                trans2.Start("Lab");
+                Transaction trans = new Transaction(doc);
+                trans.Start("Lab");
 
                 //Windos form
                 Form1 ventana = new Form1(doc);
-                ventana.Show();
+                ventana.ShowDialog();
 
-                trans2.Commit();
+                if (!ventana.Cancelclose)
+                {
+                    trans.Commit();
+                }
+                else
+                {
+                    trans.RollBack();
+                }
             }
             //If the user right-clicks or presses Esc, handle the exception
             catch (Autodesk.Revit.Exceptions.OperationCanceledException)

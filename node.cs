@@ -14,7 +14,7 @@ using System.Windows.Forms;
 
 namespace Revit_ManageElectricalCircuit
 {
-    class Node
+    public class Node
     {
         public int Name;
         public XYZ Location = null;

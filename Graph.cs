@@ -15,7 +15,7 @@ using System.Windows.Forms;
 namespace Revit_ManageElectricalCircuit
 {
     
-    class Graph
+    public class Graph
     {
         public List<Node> Nodes = new List<Node> { };
         public List<Edge> Edges = new List<Edge> { };
@@ -54,6 +54,8 @@ namespace Revit_ManageElectricalCircuit
 
             GetNode(P1, ref edge.nodeA);
             GetNode(P2, ref edge.nodeB);
+
+            edge = new Edge(ref edge.nodeA, ref edge.nodeB);
 
             Edges.Add(edge);
         }

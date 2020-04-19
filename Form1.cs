@@ -14,6 +14,8 @@ using Autodesk.Revit.UI;
 using Autodesk.Revit.UI.Selection;
 using Autodesk.Revit.DB.Electrical;
 using Form = System.Windows.Forms.Form;
+using System.Windows.Media.Imaging;
+using System.Reflection;
 
 //https://www.encodedna.com/2013/02/show-combobox-datagridview.htm
 
@@ -23,7 +25,7 @@ namespace Revit_ManageElectricalCircuit
 {
     public struct Circuit
     {
-        public Circuit(Boolean select, string panelName, string upperLevelPanel, string lowerLevelPanel, string circuitNumber, string circuitName, string upperLevelElem, string lowerLevelElem, ElectricalSystem elementcircuit)
+        public Circuit(Boolean select, string panelName, string upperLevelPanel, string lowerLevelPanel, string circuitNumber, string circuitName, string upperLevelElem, string lowerLevelElem, string serviceType, ElectricalSystem elementcircuit)
         {
             //TODO: add service type
             Select = select;
@@ -35,6 +37,7 @@ namespace Revit_ManageElectricalCircuit
             UpperLevelElem = upperLevelElem;
             LowerLevelElem = lowerLevelElem;
             ElementCircuit = elementcircuit;
+            ServiceType = serviceType;
         }
         public Boolean Select { get; set; }
         public string PanelName { get; set; }
@@ -44,25 +47,167 @@ namespace Revit_ManageElectricalCircuit
         public string CircuitName { get; set; }
         public string UpperLevelElem { get; set; }
         public string LowerLevelElem { get; set; }
+        public string ServiceType { get; set; }
         public ElectricalSystem ElementCircuit { get; set; }
     }
-    
-
+    public struct GraphSystem
+    {
+        public GraphSystem(Graph graph1, FloydWarshall FloydWarshall1)
+        {
+            //TODO: add service type
+            Graph = graph1;
+            FloydWarshall = FloydWarshall1;
+        }
+        public Graph Graph { get; set; }
+        public FloydWarshall FloydWarshall { get; set; }
+    }
     public partial class Form1 : Form
     {
+        public bool Cancelclose = false; 
         public Document doc = null;
-        private Graph connectorsSistem = new Graph();
-        private FloydWarshall floydWarshall;
-        public FilteredElementCollector Circuits;
         public FilteredElementCollector LevelsCollector;
         Dictionary<string, Level> levels = new Dictionary<string, Level>();
         Dictionary<int, Circuit> circuits = new Dictionary<int, Circuit>();
-
+        Dictionary<string, GraphSystem> serviceTypes = new Dictionary<string, GraphSystem>();
         public Form1(Document Doc)
         {
-            doc = Doc;
-            
+            InitializeComponent();
 
+            doc = Doc;
+
+            //get servicetype, circuits and levels
+            serviceTypes = ServiceTypeSystem(Doc);
+            circuits = GetCircuits(Doc);
+            levels = GetLevels(Doc);
+
+            //add default data
+            dataGridView1.Rows.Clear();
+            foreach (string elem in levels.Keys)
+            {
+                UpperLevelPanel.Items.Add(elem);
+                LowerLevelPanel.Items.Add(elem);
+                UpperLevelElement.Items.Add(elem);
+                LowerLevelElement.Items.Add(elem);
+            }
+            foreach (var elem in serviceTypes.Keys)
+            {
+                ServiceType.Items.Add(elem);
+            }
+            for (int i = 0; i < circuits.Count(); i++)
+            {
+                int n = dataGridView1.Rows.Add();
+                dataGridView1.Rows[n].Cells[0].Value = circuits[n].Select;
+                dataGridView1.Rows[n].Cells[1].Value = circuits[n].PanelName;
+                dataGridView1.Rows[n].Cells[2].Value = circuits[n].UpperLevelPanel;
+                dataGridView1.Rows[n].Cells[3].Value = circuits[n].LowerLevelPanel;
+                dataGridView1.Rows[n].Cells[4].Value = circuits[n].CircuitNumber;
+                dataGridView1.Rows[n].Cells[5].Value = circuits[n].CircuitName;
+                dataGridView1.Rows[n].Cells[6].Value = circuits[n].UpperLevelElem;
+                dataGridView1.Rows[n].Cells[7].Value = circuits[n].LowerLevelElem;
+                dataGridView1.Rows[n].Cells[8].Value = circuits[n].ServiceType;
+            }
+            label1.Text = "Count: " + dataGridView1.Rows.Count.ToString();
+        }
+        private void DataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+
+        }
+        private void CheckAll_Click(object sender, EventArgs e)
+        {
+            //TODO: ccambiar el valor tanto en la tabla como en las lista de circuitos
+            for (int i = 0; i < dataGridView1.Rows.Count; i++)
+            {
+                dataGridView1.Rows[i].Cells[0].Value = true;
+            }
+        }
+        private void CheckNone_Click(object sender, EventArgs e)
+        {
+            //TODO: ccambiar el valor tanto en la tabla como en las lista de circuitos
+            for (int i = 0; i < dataGridView1.Rows.Count; i++)
+            {
+                dataGridView1.Rows[i].Cells[0].Value = false;
+            }
+        }
+        private void Cancel_Click(object sender, EventArgs e)
+        {
+            Cancelclose = true;
+            this.Close();
+        }
+        private void Close_Click(object sender, EventArgs e)
+        {
+            this.Close();
+        }
+        private void Apply_Click(object sender, EventArgs e)
+        {
+            ApplyChanges();
+        }
+        private void ApplyChanges()
+        {
+            progressBar1.Value = 0;
+            for (int i = 0; i < circuits.Count(); i++)
+            {
+                //TODO: crear exception propias
+                //https://docs.microsoft.com/es-es/dotnet/csharp/programming-guide/exceptions/creating-and-throwing-exceptions
+                dataGridView1.Rows[i].DefaultCellStyle.BackColor = System.Drawing.Color.White;
+                if (dataGridView1.Rows[i].Cells[0].Value.Equals(true))
+                {
+                    Node nodeA = new Node();
+                    Node nodeB = new Node();
+                    Node nodeC = new Node();
+
+                    string serviceTypeName = dataGridView1.Rows[i].Cells[8].Value.ToString();
+                    LocationPoint locationPanel = circuits[i].ElementCircuit.BaseEquipment.Location as LocationPoint;
+                    XYZ XYZPanel = locationPanel.Point;
+                    nodeA.Location = XYZPanel;
+
+                    //get node more closed at the panel
+                    List<string> mesageError = new List<string>();
+                    string mesage = serviceTypes[serviceTypeName].FloydWarshall.graph.closeNode(nodeA, ref nodeA, levels[dataGridView1.Rows[i].Cells[2].Value.ToString()], levels[dataGridView1.Rows[i].Cells[3].Value.ToString()]);
+                    if (mesage != "Correct") { mesageError.Add(mesage); }
+
+                    //get nodes more closet betwy element and system
+                    Graph receptor = new Graph();
+                    receptor.AddXYZFromElementSet(circuits[i].ElementCircuit.Elements);
+                    //TODO: calculate the short cut for the receptor
+
+                    mesage = receptor.moreCloseNodes(ref serviceTypes[serviceTypeName].FloydWarshall.graph.Nodes, ref nodeC, ref nodeB);
+                    if (mesage != "Correct") { mesageError.Add(mesage); }
+
+                    //get path in the system
+                    mesage = serviceTypes[serviceTypeName].FloydWarshall.GetPath(nodeA.Name, nodeB.Name);
+                    if (mesage != "Correct") { mesageError.Add(mesage);}
+
+                    if (mesageError.Count() == 0)
+                    {
+                        circuits[i].ElementCircuit.SetCircuitPath(serviceTypes[serviceTypeName].FloydWarshall.organizePath(XYZPanel, receptor));
+                        if (circuits[i].ElementCircuit.HasCustomCircuitPath)
+                        {
+                            circuits[i].ElementCircuit.CircuitPathMode = ElectricalCircuitPathMode.Custom;
+                            dataGridView1.Rows[i].DefaultCellStyle.BackColor = System.Drawing.Color.ForestGreen;
+                        }
+                        else
+                        {
+                            dataGridView1.Rows[i].DefaultCellStyle.BackColor = System.Drawing.Color.Red;
+                        }
+                    }
+                    else
+                    {
+                        dataGridView1.Rows[i].DefaultCellStyle.BackColor = System.Drawing.Color.Red;
+                    }
+                }
+
+                progressBar1.Value = (int)Math.Round((double)((i + 1) / circuits.Count()) * 100);
+                label2.Text = progressBar1.Value.ToString() + "%";
+                label3.Text = circuits[i].PanelName.ToString() + " - " + circuits[i].CircuitNumber.ToString() + " - " + circuits[i].CircuitName.ToString();
+                if (progressBar1.Value == 100)
+                {
+                    label3.Text = "Completed";
+                }
+            }
+        }
+        private Dictionary<string, GraphSystem> ServiceTypeSystem(Document Doc)
+        {
+            Dictionary<string, GraphSystem> ServiceTypes = new Dictionary<string, GraphSystem>();
 
             //get all cable tray element in de model
             FilteredElementCollector Collector = new FilteredElementCollector(doc);
@@ -71,73 +216,72 @@ namespace Revit_ManageElectricalCircuit
             //filter service type
             //https://thebuildingcoder.typepad.com/blog/2010/06/parameter-filter.html#7
             BuiltInParameter testParam = BuiltInParameter.RBS_CTC_SERVICE_TYPE;
-            Dictionary<string, FilteredElementCollector> serviceType = new Dictionary<string, FilteredElementCollector>();
+            List<string> serviceTypeNames = new List<string>();
             foreach (Element elem in Collector)
             {
                 Parameter param = elem.get_Parameter(testParam);
-                if (param != null)
+                string paremeterValue = param.AsString();
+                if (paremeterValue != null)
                 {
-                    //if (!serviceType.ContainsKey(param.AsString()))
-                    //{
-                    //    serviceType.Add(param.AsString(), null);
-                    //}                        
+                    if (!serviceTypeNames.Contains(paremeterValue))
+                    {
+                        serviceTypeNames.Add(paremeterValue);
+                    }
                 }
             }
-            foreach(string key in serviceType.Keys)
+            foreach (string key in serviceTypeNames)
             {
-                String ruleValStr = key.ToString();
+
+                //create Filter servicetype cable tray
+                //https://thebuildingcoder.typepad.com/blog/2010/06/parameter-filter.html#7
                 ParameterValueProvider pvp = new ParameterValueProvider(new ElementId((int)testParam));
                 FilterStringRuleEvaluator fnrvStr = new FilterStringContains();
-                FilterStringRule paramFr = new FilterStringRule(pvp, fnrvStr, ruleValStr, false);
+                FilterStringRule paramFr = new FilterStringRule(pvp, fnrvStr, key, false);
                 ElementParameterFilter epf = new ElementParameterFilter(paramFr);
-                //Collector.OfClass(typeof(CableTray)).WherePasses(epf); // only deal with CableTray
-                FilteredElementCollector CollectorKey =Collector;
-                CollectorKey.WherePasses(epf);
-                serviceType[key] = CollectorKey;
-            }
-            serviceType.Add("None", Collector);
 
-            //TODO: select service type
-            //String ruleValStr = serviceType.First();
-            
-            //create graph to cable tray
+                //Filter servicetype cable tray
+                FilteredElementCollector CollectorKey = new FilteredElementCollector(doc);
+                CollectorKey = GetConnectorElements(doc, false);
+                CollectorKey.WherePasses(epf);
+
+                //create graph to cable tray
+                Graph connectorsSistem1 = new Graph();
+                connectorsSistem1.AddConnectorSetFromFilteredElementCollector(CollectorKey);
+
+                //create floydWarshall to all cable tray
+                FloydWarshall floydWarshall1 = new FloydWarshall(ref connectorsSistem1);
+                floydWarshall1.PlayFloydWarshall();
+
+                //Add service type system
+                GraphSystem graphSystem1 = new GraphSystem(connectorsSistem1, floydWarshall1);
+                ServiceTypes.Add(key, graphSystem1);
+            }
+
+            //create graph to all cable tray
+            Graph connectorsSistem = new Graph();
             connectorsSistem = new Graph();
             connectorsSistem.AddConnectorSetFromFilteredElementCollector(Collector);
 
-            //calculate floydWarshall
+            //create floydWarshall to all cable tray
+            FloydWarshall floydWarshall;
             floydWarshall = new FloydWarshall(ref connectorsSistem);
-            //TODO: incluede playfloydWarshall in constructor.
             floydWarshall.PlayFloydWarshall();
 
+            //Add service type system
+            GraphSystem graphSystem = new GraphSystem(connectorsSistem, floydWarshall);
+            ServiceTypes.Add("None", graphSystem);
+
+            return ServiceTypes;
+        }
+        private Dictionary<int, Circuit> GetCircuits(Document Doc)
+        {
+            Dictionary<int, Circuit> Circuits = new Dictionary<int, Circuit>();
             //Pick Circuit
-            Circuits = new FilteredElementCollector(doc);
-            Circuits.OfCategory(BuiltInCategory.OST_ElectricalCircuit);
+            FilteredElementCollector CircuitsCollector = new FilteredElementCollector(doc);
+            CircuitsCollector.OfCategory(BuiltInCategory.OST_ElectricalCircuit);
 
-            //Pick Levels
-            FilteredElementCollector Levels = new FilteredElementCollector(doc);
-            Levels.OfCategory(BuiltInCategory.OST_Levels);
-
-            InitializeComponent();
-
-            //TODO: what happen when a level take default option of this program?
-            levels.Add("None", null);
-            levels.Add("Level Upper", null);
-            levels.Add("Level Lower", null);
-
-            foreach (Element elem in Levels)
-            {
-                levels.Add(elem.Name, elem as Level);
-            }
-
-            foreach (string elem in levels.Keys)
-            {
-                UpperLevelPanel.Items.Add(elem);
-                LowerLevelPanel.Items.Add(elem);
-                UpperLevelElement.Items.Add(elem);
-                LowerLevelElement.Items.Add(elem);
-            }
             int j = 0;
-            foreach (ElectricalSystem elem in Circuits)
+            foreach (ElectricalSystem elem in CircuitsCollector)
             {
                 //TODO: is correct use "none" in ths case?
                 string panelName = null;
@@ -149,54 +293,29 @@ namespace Revit_ManageElectricalCircuit
                 {
                     panelName = "None";
                 }
-                Circuit circuit = new Circuit(false, panelName, "Level Upper", "Level Lower", elem.CircuitNumber, elem.LoadName, "Level Upper", "Level Lower", elem);
-                circuits.Add(j, circuit);
+                Circuit circuit = new Circuit(false, panelName, "Level Upper", "Level Lower", elem.CircuitNumber, elem.LoadName, "Level Upper", "Level Lower", "None", elem);
+                Circuits.Add(j, circuit);
                 j++;
             }
+            return Circuits;
+        }
+        private Dictionary<string, Level> GetLevels(Document Doc)
+        {
+            Dictionary<string, Level> levels = new Dictionary<string, Level>();
+            //Pick Levels
+            FilteredElementCollector Levels = new FilteredElementCollector(doc);
+            Levels.OfCategory(BuiltInCategory.OST_Levels);
 
-            dataGridView1.Rows.Clear();
-            for (int i = 0; i < Circuits.Count(); i++)
+            //TODO: what happen when a level take default option of this program?
+            this.levels.Add("None", null);
+            this.levels.Add("Level Upper", null);
+            this.levels.Add("Level Lower", null);
+
+            foreach (Element elem in Levels)
             {
-                int n = dataGridView1.Rows.Add();
-                dataGridView1.Rows[n].Cells[0].Value = circuits[n].Select;
-                dataGridView1.Rows[n].Cells[1].Value = circuits[n].PanelName;
-                dataGridView1.Rows[n].Cells[2].Value = circuits[n].UpperLevelPanel;
-                dataGridView1.Rows[n].Cells[3].Value = circuits[n].LowerLevelPanel;
-                dataGridView1.Rows[n].Cells[4].Value = circuits[n].CircuitNumber;
-                dataGridView1.Rows[n].Cells[5].Value = circuits[n].CircuitName;
-                dataGridView1.Rows[n].Cells[6].Value = circuits[n].UpperLevelElem;
-                dataGridView1.Rows[n].Cells[7].Value = circuits[n].LowerLevelElem;
+                this.levels.Add(elem.Name, elem as Level);
             }
-            label1.Text = "Count: " + dataGridView1.Rows.Count.ToString();
-        }
-
-        private void DataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
-        {
-            
-        }
-
-        private void CheckAll_Click(object sender, EventArgs e)
-        {
-            //TODO: ccambiar el valor tanto en la tabla como en las lista de circuitos
-            for (int i = 0; i < dataGridView1.Rows.Count; i++)
-            {
-                dataGridView1.Rows[i].Cells[0].Value = true;
-            }
-        }
-
-        private void CheckNone_Click(object sender, EventArgs e)
-        {
-            //TODO: ccambiar el valor tanto en la tabla como en las lista de circuitos
-            for (int i = 0; i < dataGridView1.Rows.Count; i++)
-            {
-                dataGridView1.Rows[i].Cells[0].Value = false;
-            }
-        }
-
-        private void Accept_Click(object sender, EventArgs e)
-        {
-            ApplyChanges();
-            this.Close();
+            return this.levels;
         }
         static FilteredElementCollector GetConnectorElements(Document doc, bool include_wires)
         {
@@ -263,71 +382,8 @@ namespace Revit_ManageElectricalCircuit
               = new FilteredElementCollector(doc);
 
             collector.WherePasses(classFilter);
-            
+
             return collector;
-        }
-        private void Close_Click(object sender, EventArgs e)
-        {
-            this.Close();
-        }
-        private void Apply_Click(object sender, EventArgs e)
-        {
-            ApplyChanges();
-        }
-        private void ApplyChanges()
-        {
-            progressBar1.Value = 0;
-            for (int i = 0; i < Circuits.Count(); i++)
-            {
-                //TODO: crear exception propias
-                //https://docs.microsoft.com/es-es/dotnet/csharp/programming-guide/exceptions/creating-and-throwing-exceptions
-                dataGridView1.Rows[i].DefaultCellStyle.BackColor = System.Drawing.Color.White;
-                if (dataGridView1.Rows[i].Cells[0].Value.Equals(true))
-                {
-                    Node nodeA = new Node();
-                    Node nodeB = new Node();
-                    Node nodeC = new Node();
-
-                    LocationPoint locationPanel = circuits[i].ElementCircuit.BaseEquipment.Location as LocationPoint;
-                    XYZ XYZPanel = locationPanel.Point;
-                    nodeA.Location = XYZPanel;
-
-                    //get node more closed at the panel
-                    List<string> mesageError = new List<string>();
-                    string mesage = floydWarshall.graph.closeNode(nodeA, ref nodeA, levels[dataGridView1.Rows[i].Cells[2].Value.ToString()], levels[dataGridView1.Rows[i].Cells[3].Value.ToString()]);
-                    if (mesage != "Correct") { mesageError.Add(mesage);}
-
-                    //get nodes more closet betwy element and system
-                    Graph receptor = new Graph();
-                    receptor.AddXYZFromElementSet(circuits[i].ElementCircuit.Elements);
-                    //TODO: calculate the short cut for the receptor
-
-                    mesage = receptor.moreCloseNodes(ref floydWarshall.graph.Nodes, ref nodeC, ref nodeB);
-                    if (mesage != "Correct") { mesageError.Add(mesage); }
-
-                    //get path in the system
-                    mesage = floydWarshall.GetPath(nodeA.Name, nodeB.Name);
-                    if (mesage != "Correct") { mesageError.Add(mesage); }
-
-                    if (mesageError.Count()==0)
-                    {
-                        circuits[i].ElementCircuit.SetCircuitPath(floydWarshall.organizePath(XYZPanel, receptor));
-                        dataGridView1.Rows[i].DefaultCellStyle.BackColor = System.Drawing.Color.ForestGreen;
-                    }
-                    else
-                    {
-                        dataGridView1.Rows[i].DefaultCellStyle.BackColor = System.Drawing.Color.Red;
-                    }
-                }
-
-                progressBar1.Value =(int)Math.Round((double)((i+1)/Circuits.Count())*100);
-                label2.Text =progressBar1.Value.ToString() + "%";
-                label3.Text = circuits[i].PanelName.ToString() + " - " + circuits[i].CircuitNumber.ToString() + " - " + circuits[i].CircuitName.ToString();
-                if (progressBar1.Value == 100)
-                {
-                    label3.Text = "Completed";
-                }
-            }
         }
     }
 }

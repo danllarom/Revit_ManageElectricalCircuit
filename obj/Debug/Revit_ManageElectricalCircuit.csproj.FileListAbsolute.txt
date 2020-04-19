@@ -10,4 +10,7 @@ C:\Users\Valhalla\source\repos\Revit_ManageElectricalCircuit\bin\Debug\AdvancedD
 C:\Users\Valhalla\source\repos\Revit_ManageElectricalCircuit\bin\Debug\fr\AdvancedDataGridView.resources.dll
 C:\Users\Valhalla\source\repos\Revit_ManageElectricalCircuit\bin\Debug\ru\AdvancedDataGridView.resources.dll
 C:\Users\Valhalla\source\repos\Revit_ManageElectricalCircuit\obj\Debug\Revit_ManageElectricalCircuit.csproj.CopyComplete
+C:\Users\Valhalla\source\repos\Revit_ManageElectricalCircuit\bin\Debug\ExcelDataReader.dll
+C:\Users\Valhalla\source\repos\Revit_ManageElectricalCircuit\bin\Debug\ExcelDataReader.pdb
+C:\Users\Valhalla\source\repos\Revit_ManageElectricalCircuit\bin\Debug\ExcelDataReader.xml
 C:\Users\Valhalla\source\repos\Revit_ManageElectricalCircuit\obj\Debug\Revit_ManageElectricalCircuit.csprojAssemblyReference.cache
